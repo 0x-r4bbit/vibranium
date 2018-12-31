@@ -4,6 +4,9 @@ extern crate vibranium;
 
 use clap::{App, SubCommand, Arg};
 use vibranium::Vibranium;
+use vibranium::blockchain::NodeConfig;
+
+const DEFAULT_NODE_CLIENT: &str = "parity";
 
 fn main() {
   let matches = App::new("Vibranium CLI")
@@ -20,8 +23,13 @@ fn main() {
                       .takes_value(true))
                   ).get_matches();
 
-  if let Some(_matches) = matches.subcommand_matches("node") {
+  if let ("node", Some(cmd)) = matches.subcommand() {
     let vibranium = Vibranium::new();
-    vibranium.start_node();
+
+    let config = NodeConfig {
+      client: cmd.value_of("client").unwrap_or(DEFAULT_NODE_CLIENT),
+    };
+  
+    vibranium.start_node(config);
   }
 }

@@ -1,4 +1,4 @@
-use std::process::{Command};
+pub mod blockchain;
 
 #[derive(Debug)]
 pub struct Vibranium;
@@ -9,8 +9,9 @@ impl Vibranium {
     }
   }
 
-  pub fn start_node(&self) {
-    let mut cmd = Command::new("parity").spawn().unwrap();
-    cmd.wait();
+  pub fn start_node(&self, config: blockchain::NodeConfig) {
+    let node = blockchain::Node::new(config);
+    let process = node.start();
+    process.unwrap().wait();
   }
 }
