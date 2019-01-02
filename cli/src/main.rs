@@ -30,6 +30,8 @@ fn main() {
       client: cmd.value_of("client").unwrap_or(DEFAULT_NODE_CLIENT),
     };
   
-    vibranium.start_node(config);
+    if let Err(err) = vibranium.start_node(config) {
+      println!("Error: {}", err)
+    }
   }
 }
