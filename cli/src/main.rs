@@ -2,6 +2,7 @@
 extern crate clap;
 extern crate vibranium;
 
+use std::process::exit;
 use clap::{App, SubCommand, Arg};
 use vibranium::Vibranium;
 use vibranium::blockchain::NodeConfig;
@@ -31,7 +32,8 @@ fn main() {
     };
   
     if let Err(err) = vibranium.start_node(config) {
-      println!("Error: {}", err)
+      eprintln!("Error: {:?}", err);
+      exit(1);
     }
   }
 }
