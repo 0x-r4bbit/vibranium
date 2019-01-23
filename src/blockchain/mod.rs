@@ -2,6 +2,7 @@ use std::process::{Command, Child};
 
 pub struct NodeConfig<'a> {
   pub client: &'a str,
+  pub client_options: &'a Vec<&'a str>,
 }
 
 pub struct Node<'a> {
@@ -16,8 +17,11 @@ impl<'a> Node<'a> {
   }
 
   pub fn start(&self) -> Result<Child, std::io::Error> {
-    return Command::new(self.config.client).spawn();
+    Command::new(self.config.client)
+            .args(self.config.client_options)
+            .spawn()
   }
 }
+
 
 
