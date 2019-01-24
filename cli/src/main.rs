@@ -2,6 +2,7 @@
 extern crate clap;
 extern crate vibranium;
 
+use std::io;
 use std::process::exit;
 use clap::{App, SubCommand, Arg};
 use vibranium::Vibranium;
@@ -32,6 +33,7 @@ fn main() {
   if let ("node", Some(cmd)) = matches.subcommand() {
     let vibranium = Vibranium::new();
 
+    let client = cmd.value_of("client").unwrap_or(DEFAULT_NODE_CLIENT);
     let mut client_options = vec![];
 
     if let Some(options) = cmd.values_of("client-opts") {
@@ -39,12 +41,15 @@ fn main() {
     }
 
     let config = NodeConfig {
-      client: cmd.value_of("client").unwrap_or(DEFAULT_NODE_CLIENT),
+      client: &client,
       client_options: &client_options,
     };
   
     if let Err(err) = vibranium.start_node(config) {
-      eprintln!("Error: {:?}", err);
+      match err.kind() {
+        io::ErrorKind::NotFound => eprintln!("Couldn't find client: '{}', are you sure it's installed?", client),
+        _ => eprintln!("Something went wrong. {}", err)
+      }
       exit(1);
     }
   }
