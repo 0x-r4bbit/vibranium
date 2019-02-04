@@ -5,6 +5,9 @@ use std::io;
 use std::process::ExitStatus;
 use std::path::PathBuf;
 
+#[macro_use]
+extern crate serde_derive;
+
 #[derive(Debug)]
 pub struct Vibranium;
 
