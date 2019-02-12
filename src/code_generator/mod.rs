@@ -5,9 +5,9 @@ use std::fs;
 use std::io::Write;
 
 const VIBRANIUM_CONFIG_FILE: &str = "vibranium.toml";
-const VIBRANIUM_PROJECT_DIRECTORY: &str = ".vibranium";
+pub const VIBRANIUM_PROJECT_DIRECTORY: &str = ".vibranium";
 const DEFAULT_CONTRACTS_DIRECTORY: &str = "contracts";
-const DEFAULT_ARTIFACTS_DIRECTORY: &str = "artifacts";
+pub const DEFAULT_ARTIFACTS_DIRECTORY: &str = "artifacts";
 
 #[derive(Serialize)]
 struct ProjectConfig {

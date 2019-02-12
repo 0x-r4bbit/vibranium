@@ -49,6 +49,15 @@ fn run() -> Result<(), Error> {
                     .value_name("PATH")
                     .help("Specifies path to directory in which to initialize Vibranium project")
                     .takes_value(true))
+                  )
+                  .subcommand(SubCommand::with_name("reset")
+                    .about("Resets Vibranium project")
+                    .arg(Arg::with_name("path")
+                    .short("p")
+                    .long("path")
+                    .value_name("PATH")
+                    .help("Specifies path to Vibranium project to reset")
+                    .takes_value(true))
                   ).get_matches();
 
   if let ("node", Some(cmd)) = matches.subcommand() {
@@ -76,5 +85,13 @@ fn run() -> Result<(), Error> {
 
     vibranium.init_project(path).and_then(|_| Ok(println!("Done.")))?
   }
+
+  if let ("reset", Some(cmd)) = matches.subcommand() {
+    println!("Resetting Vibranium project...");
+    let vibranium = Vibranium::new();
+    let path = cmd.value_of("path").map(|p| Ok(PathBuf::from(p))).unwrap_or_else(|| env::current_dir())?;
+    vibranium.reset_project(path).and_then(|_| Ok(println!("Done.")))?
+  }
+
   Ok(())
 }
