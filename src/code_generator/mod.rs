@@ -9,7 +9,7 @@ pub const VIBRANIUM_PROJECT_DIRECTORY: &str = ".vibranium";
 const DEFAULT_CONTRACTS_DIRECTORY: &str = "contracts";
 pub const DEFAULT_ARTIFACTS_DIRECTORY: &str = "artifacts";
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, Debug)]
 struct ProjectConfig {
   artifacts_dir: String,
   smart_contract_sources: Vec<String>,
@@ -23,16 +23,13 @@ impl CodeGenerator {
   }
 
   pub fn generate_project(&self, project_path: PathBuf) -> Result<(), std::io::Error> {
-    for directory in vec![VIBRANIUM_PROJECT_DIRECTORY, DEFAULT_CONTRACTS_DIRECTORY] {
-      let path = project_path.join(directory);
-      if !path.exists() {
-        fs::create_dir_all(path)?;
-      }
-    }
-
     let config_path = project_path.join(VIBRANIUM_CONFIG_FILE);
 
+    let mut directories_to_create: Vec<String> = vec![VIBRANIUM_PROJECT_DIRECTORY.to_string(), DEFAULT_CONTRACTS_DIRECTORY.to_string()];
+
     if !config_path.exists() {
+      directories_to_create.push(DEFAULT_ARTIFACTS_DIRECTORY.to_string());
+
       let config = ProjectConfig {
         artifacts_dir: DEFAULT_ARTIFACTS_DIRECTORY.to_string(),
         smart_contract_sources: vec![DEFAULT_CONTRACTS_DIRECTORY.to_string() + "/**"]
@@ -41,6 +38,16 @@ impl CodeGenerator {
       let config_toml = toml::to_string(&config).unwrap();
       let mut config_file = fs::File::create(config_path)?;
       config_file.write_all(config_toml.as_bytes())?;
+    } else {
+      let existing_config: ProjectConfig = toml::from_str(&fs::read_to_string(config_path)?).unwrap();
+      directories_to_create.push(existing_config.artifacts_dir);
+    }
+
+    for directory in directories_to_create {
+      let path = project_path.join(directory);
+      if !path.exists() {
+        fs::create_dir_all(path)?;
+      }
     }
     Ok(())
   }
