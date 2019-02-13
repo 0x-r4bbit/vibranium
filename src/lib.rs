@@ -18,10 +18,10 @@ impl Vibranium {
     }
   }
 
-  pub fn start_node(&self, config: blockchain::NodeConfig) -> Result<ExitStatus, io::Error> {
+  pub fn start_node(&self, config: blockchain::NodeConfig) -> Result<ExitStatus, blockchain::error::NodeError> {
     let node = blockchain::Node::new(config);
     node.start()
-        .map(|mut process| process.wait())
+        .map(|mut process| process.wait().map_err(blockchain::error::NodeError::Io))
         .and_then(|status| status)
   }
 
