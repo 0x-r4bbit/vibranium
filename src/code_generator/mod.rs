@@ -55,6 +55,7 @@ impl CodeGenerator {
 
   pub fn reset_project(&self, project_path: PathBuf) -> Result<(), io::Error> {
     let vibranium_project_directory = project_path.join(VIBRANIUM_PROJECT_DIRECTORY);
+    let config_path = project_path.join(VIBRANIUM_CONFIG_FILE);
 
     if !vibranium_project_directory.exists() {
       return Err(io::Error::new(
@@ -65,6 +66,11 @@ impl CodeGenerator {
 
     let _ = fs::remove_dir_all(vibranium_project_directory);
     let _ = fs::remove_dir_all(project_path.join(DEFAULT_ARTIFACTS_DIRECTORY));
+
+    if config_path.exists() {
+      let existing_config: ProjectConfig = toml::from_str(&fs::read_to_string(config_path)?).unwrap();
+      let _ = fs::remove_dir_all(project_path.join(existing_config.artifacts_dir));
+    }
     Self::generate_project(self, project_path)
   }
 }
