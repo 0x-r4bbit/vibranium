@@ -2,12 +2,13 @@ extern crate toml;
 
 use std::path::{PathBuf};
 use std::fs;
+use std::io;
 use std::io::Write;
 
 const VIBRANIUM_CONFIG_FILE: &str = "vibranium.toml";
-pub const VIBRANIUM_PROJECT_DIRECTORY: &str = ".vibranium";
+const VIBRANIUM_PROJECT_DIRECTORY: &str = ".vibranium";
 const DEFAULT_CONTRACTS_DIRECTORY: &str = "contracts";
-pub const DEFAULT_ARTIFACTS_DIRECTORY: &str = "artifacts";
+const DEFAULT_ARTIFACTS_DIRECTORY: &str = "artifacts";
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ProjectConfig {
@@ -22,7 +23,7 @@ impl CodeGenerator {
     CodeGenerator
   }
 
-  pub fn generate_project(&self, project_path: PathBuf) -> Result<(), std::io::Error> {
+  pub fn generate_project(&self, project_path: PathBuf) -> Result<(), io::Error> {
     let config_path = project_path.join(VIBRANIUM_CONFIG_FILE);
 
     let mut directories_to_create: Vec<String> = vec![VIBRANIUM_PROJECT_DIRECTORY.to_string(), DEFAULT_CONTRACTS_DIRECTORY.to_string()];
@@ -50,5 +51,20 @@ impl CodeGenerator {
       }
     }
     Ok(())
+  }
+
+  pub fn reset_project(&self, project_path: PathBuf) -> Result<(), io::Error> {
+    let vibranium_project_directory = project_path.join(VIBRANIUM_PROJECT_DIRECTORY);
+
+    if !vibranium_project_directory.exists() {
+      return Err(io::Error::new(
+        io::ErrorKind::NotFound,
+        "Aborting. Not a Vibranium project."
+      ));
+    }
+
+    let _ = fs::remove_dir_all(vibranium_project_directory);
+    let _ = fs::remove_dir_all(project_path.join(DEFAULT_ARTIFACTS_DIRECTORY));
+    Self::generate_project(self, project_path)
   }
 }
