@@ -30,6 +30,6 @@ impl Vibranium {
 
   pub fn reset_project(&self, path: PathBuf) -> Result<(), project_generator::error::ProjectGenerationError> {
     let generator = project_generator::ProjectGenerator::new();
-    generator.reset_project(path)
+    generator.reset_project(path.clone()).and_then(|_| generator.generate_project(path))
   }
 }

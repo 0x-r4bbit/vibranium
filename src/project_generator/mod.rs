@@ -74,6 +74,6 @@ impl ProjectGenerator {
       let existing_config: ProjectConfig = toml::from_str(&fs::read_to_string(config_path).map_err(error::ProjectGenerationError::Io)?).map_err(error::ProjectGenerationError::ConfigDeserialization)?;
       let _ = fs::remove_dir_all(project_path.join(existing_config.artifacts_dir));
     }
-    Self::generate_project(self, project_path)
+    Ok(())
   }
 }
