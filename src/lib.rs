@@ -1,7 +1,6 @@
 pub mod blockchain;
 pub mod code_generator;
 
-use std::io;
 use std::process::ExitStatus;
 use std::path::PathBuf;
 
@@ -24,12 +23,12 @@ impl Vibranium {
         .and_then(|status| status)
   }
 
-  pub fn init_project(&self, path: PathBuf) -> Result<(), io::Error> {
+  pub fn init_project(&self, path: PathBuf) -> Result<(), code_generator::error::ProjectGenerationError> {
     let generator = code_generator::CodeGenerator::new();
     generator.generate_project(path)
   }
 
-  pub fn reset_project(&self, path: PathBuf) -> Result<(), io::Error> {
+  pub fn reset_project(&self, path: PathBuf) -> Result<(), code_generator::error::ProjectGenerationError> {
     let generator = code_generator::CodeGenerator::new();
     generator.reset_project(path)
   }

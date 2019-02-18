@@ -2,8 +2,9 @@ extern crate toml;
 
 use std::path::{PathBuf};
 use std::fs;
-use std::io;
 use std::io::Write;
+
+pub mod error;
 
 const VIBRANIUM_CONFIG_FILE: &str = "vibranium.toml";
 const VIBRANIUM_PROJECT_DIRECTORY: &str = ".vibranium";
@@ -23,7 +24,11 @@ impl CodeGenerator {
     CodeGenerator
   }
 
-  pub fn generate_project(&self, project_path: PathBuf) -> Result<(), io::Error> {
+  pub fn generate_project(&self, project_path: PathBuf) -> Result<(), error::ProjectGenerationError> {
+    if !project_path.exists() {
+      return Err(error::ProjectGenerationError::ProjectPathNotFound);
+    }
+
     let config_path = project_path.join(VIBRANIUM_CONFIG_FILE);
 
     let mut directories_to_create: Vec<String> = vec![VIBRANIUM_PROJECT_DIRECTORY.to_string(), DEFAULT_CONTRACTS_DIRECTORY.to_string()];
@@ -36,39 +41,37 @@ impl CodeGenerator {
         smart_contract_sources: vec![DEFAULT_CONTRACTS_DIRECTORY.to_string() + "/**"]
       };
 
-      let config_toml = toml::to_string(&config).unwrap();
-      let mut config_file = fs::File::create(config_path)?;
-      config_file.write_all(config_toml.as_bytes())?;
+      let config_toml = toml::to_string(&config).map_err(error::ProjectGenerationError::ConfigSerialization)?;
+      let mut config_file = fs::File::create(config_path).map_err(error::ProjectGenerationError::Io)?;
+      config_file.write_all(config_toml.as_bytes()).map_err(error::ProjectGenerationError::Io)?;
     } else {
-      let existing_config: ProjectConfig = toml::from_str(&fs::read_to_string(config_path)?).unwrap();
+      let existing_config: ProjectConfig = toml::from_str(&fs::read_to_string(config_path).map_err(error::ProjectGenerationError::Io)?)
+        .map_err(error::ProjectGenerationError::ConfigDeserialization)?;
       directories_to_create.push(existing_config.artifacts_dir);
     }
 
     for directory in directories_to_create {
       let path = project_path.join(directory);
       if !path.exists() {
-        fs::create_dir_all(path)?;
+        fs::create_dir_all(path).map_err(error::ProjectGenerationError::Io)?;
       }
     }
     Ok(())
   }
 
-  pub fn reset_project(&self, project_path: PathBuf) -> Result<(), io::Error> {
+  pub fn reset_project(&self, project_path: PathBuf) -> Result<(), error::ProjectGenerationError> {
     let vibranium_project_directory = project_path.join(VIBRANIUM_PROJECT_DIRECTORY);
     let config_path = project_path.join(VIBRANIUM_CONFIG_FILE);
 
     if !vibranium_project_directory.exists() {
-      return Err(io::Error::new(
-        io::ErrorKind::NotFound,
-        "Aborting. Not a Vibranium project."
-      ));
+      return Err(error::ProjectGenerationError::VibraniumDirectoryNotFound);
     }
 
     let _ = fs::remove_dir_all(vibranium_project_directory);
     let _ = fs::remove_dir_all(project_path.join(DEFAULT_ARTIFACTS_DIRECTORY));
 
     if config_path.exists() {
-      let existing_config: ProjectConfig = toml::from_str(&fs::read_to_string(config_path)?).unwrap();
+      let existing_config: ProjectConfig = toml::from_str(&fs::read_to_string(config_path).map_err(error::ProjectGenerationError::Io)?).map_err(error::ProjectGenerationError::ConfigDeserialization)?;
       let _ = fs::remove_dir_all(project_path.join(existing_config.artifacts_dir));
     }
     Self::generate_project(self, project_path)
