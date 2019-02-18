@@ -17,11 +17,11 @@ struct ProjectConfig {
   smart_contract_sources: Vec<String>,
 }
 
-pub struct CodeGenerator;
+pub struct ProjectGenerator;
 
-impl CodeGenerator {
-  pub fn new() -> CodeGenerator {
-    CodeGenerator
+impl ProjectGenerator {
+  pub fn new() -> ProjectGenerator {
+    ProjectGenerator
   }
 
   pub fn generate_project(&self, project_path: PathBuf) -> Result<(), error::ProjectGenerationError> {
