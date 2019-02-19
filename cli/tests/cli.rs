@@ -10,7 +10,7 @@ use predicates::prelude::*;
 const TMP_TEST_DIR: &str = "/tmp";
 
 #[test]
-fn project_path_doesnt_exist() -> Result<(), Box<std::error::Error>> {
+fn it_should_fail_on_init_if_project_path_doesnt_exist() -> Result<(), Box<std::error::Error>> {
   let mut cmd = Command::main_binary()?;
   cmd.arg("init")
       .arg("--path")
@@ -22,7 +22,7 @@ fn project_path_doesnt_exist() -> Result<(), Box<std::error::Error>> {
 }
 
 #[test]
-fn init_project() -> Result<(), Box<std::error::Error>> {
+fn it_should_initialize_project() -> Result<(), Box<std::error::Error>> {
   let _ = fs::create_dir(TMP_TEST_DIR);
   let project_path = Path::new(TMP_TEST_DIR).join("vibranium_test_dapp__1");
   fs::create_dir_all(&project_path)?;
@@ -43,7 +43,7 @@ fn init_project() -> Result<(), Box<std::error::Error>> {
 }
 
 #[test]
-fn not_a_vibranium_project() -> Result<(), Box<std::error::Error>> {
+fn it_should_fail_on_reset_if_project_is_not_a_vibranium_project() -> Result<(), Box<std::error::Error>> {
   let _ = fs::create_dir(TMP_TEST_DIR);
   let project_path = Path::new(TMP_TEST_DIR).join("vibranium_test_dapp__2");
   fs::create_dir_all(&project_path)?;
@@ -61,7 +61,7 @@ fn not_a_vibranium_project() -> Result<(), Box<std::error::Error>> {
 }
 
 #[test]
-fn reset_project() -> Result<(), Box<std::error::Error>> {
+fn it_should_reset_project() -> Result<(), Box<std::error::Error>> {
 
   let _ = fs::create_dir(TMP_TEST_DIR);
   let project_path = Path::new(TMP_TEST_DIR).join("vibranium_test_dapp__3");
