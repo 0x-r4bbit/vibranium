@@ -24,7 +24,7 @@ impl ProjectGenerator {
     ProjectGenerator
   }
 
-  pub fn generate_project(&self, project_path: PathBuf) -> Result<(), error::ProjectGenerationError> {
+  pub fn generate_project(&self, project_path: &PathBuf) -> Result<(), error::ProjectGenerationError> {
     if !project_path.exists() {
       return Err(error::ProjectGenerationError::ProjectPathNotFound);
     }
@@ -59,7 +59,7 @@ impl ProjectGenerator {
     Ok(())
   }
 
-  pub fn reset_project(&self, project_path: PathBuf) -> Result<(), error::ProjectGenerationError> {
+  pub fn reset_project(&self, project_path: &PathBuf) -> Result<(), error::ProjectGenerationError> {
     let vibranium_project_directory = project_path.join(VIBRANIUM_PROJECT_DIRECTORY);
     let config_path = project_path.join(VIBRANIUM_CONFIG_FILE);
 

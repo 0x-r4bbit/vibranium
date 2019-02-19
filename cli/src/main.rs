@@ -61,7 +61,7 @@ fn run() -> Result<(), Error> {
                   ).get_matches();
 
   if let ("node", Some(cmd)) = matches.subcommand() {
-    let vibranium = Vibranium::new();
+    let vibranium = Vibranium::new(env::current_dir()?);
 
     let client = cmd.value_of("client").unwrap_or(DEFAULT_NODE_CLIENT);
     let mut client_options = vec![];
@@ -80,18 +80,23 @@ fn run() -> Result<(), Error> {
 
   if let ("init", Some(cmd)) = matches.subcommand() {
     println!("Initializing empty Vibranium project...");
-    let vibranium = Vibranium::new();
-    let path = cmd.value_of("path").map(|p| Ok(PathBuf::from(p))).unwrap_or_else(|| env::current_dir())?;
+    let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
+    let vibranium = Vibranium::new(path);
 
-    vibranium.init_project(path).and_then(|_| Ok(println!("Done.")))?
+    vibranium.init_project().and_then(|_| Ok(println!("Done.")))?
   }
 
   if let ("reset", Some(cmd)) = matches.subcommand() {
     println!("Resetting Vibranium project...");
-    let vibranium = Vibranium::new();
-    let path = cmd.value_of("path").map(|p| Ok(PathBuf::from(p))).unwrap_or_else(|| env::current_dir())?;
-    vibranium.reset_project(path).and_then(|_| Ok(println!("Done.")))?
+    let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
+    let vibranium = Vibranium::new(path);
+    vibranium.reset_project().and_then(|_| Ok(println!("Done.")))?
   }
 
   Ok(())
 }
+
+fn pathbuf_from_or_current_dir(path: Option<&str>) -> Result<PathBuf, std::io::Error> {
+  path.map(|p| Ok(PathBuf::from(p))).unwrap_or_else(|| env::current_dir())
+}
+

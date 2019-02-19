@@ -8,11 +8,14 @@ use std::path::PathBuf;
 extern crate serde_derive;
 
 #[derive(Debug)]
-pub struct Vibranium;
+pub struct Vibranium {
+  project_path: PathBuf,
+}
 
 impl Vibranium {
-  pub fn new() -> Vibranium {
+  pub fn new(project_path: PathBuf) -> Vibranium {
     Vibranium {
+      project_path
     }
   }
 
@@ -23,13 +26,15 @@ impl Vibranium {
         .and_then(|status| status)
   }
 
-  pub fn init_project(&self, path: PathBuf) -> Result<(), project_generator::error::ProjectGenerationError> {
+  pub fn init_project(&self) -> Result<(), project_generator::error::ProjectGenerationError> {
     let generator = project_generator::ProjectGenerator::new();
-    generator.generate_project(path)
+    generator.generate_project(&self.project_path)
   }
 
-  pub fn reset_project(&self, path: PathBuf) -> Result<(), project_generator::error::ProjectGenerationError> {
+  pub fn reset_project(&self) -> Result<(), project_generator::error::ProjectGenerationError> {
     let generator = project_generator::ProjectGenerator::new();
-    generator.reset_project(path.clone()).and_then(|_| generator.generate_project(path))
+    generator
+      .reset_project(&self.project_path)
+      .and_then(|_| generator.generate_project(&self.project_path))
   }
 }
