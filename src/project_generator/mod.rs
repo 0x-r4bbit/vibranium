@@ -45,8 +45,7 @@ impl ProjectGenerator {
       let mut config_file = fs::File::create(config_path).map_err(error::ProjectGenerationError::Io)?;
       config_file.write_all(config_toml.as_bytes()).map_err(error::ProjectGenerationError::Io)?;
     } else {
-      let existing_config: ProjectConfig = toml::from_str(&fs::read_to_string(config_path).map_err(error::ProjectGenerationError::Io)?)
-        .map_err(error::ProjectGenerationError::ConfigDeserialization)?;
+      let existing_config = ProjectGenerator::read_config(&config_path)?;
       directories_to_create.push(existing_config.artifacts_dir);
     }
 
@@ -71,9 +70,13 @@ impl ProjectGenerator {
     let _ = fs::remove_dir_all(project_path.join(DEFAULT_ARTIFACTS_DIRECTORY));
 
     if config_path.exists() {
-      let existing_config: ProjectConfig = toml::from_str(&fs::read_to_string(config_path).map_err(error::ProjectGenerationError::Io)?).map_err(error::ProjectGenerationError::ConfigDeserialization)?;
+      let existing_config = ProjectGenerator::read_config(&config_path)?;
       let _ = fs::remove_dir_all(project_path.join(existing_config.artifacts_dir));
     }
     Ok(())
+  }
+
+  fn read_config(path: &PathBuf) -> Result<ProjectConfig, error::ProjectGenerationError> {
+    toml::from_str(&fs::read_to_string(path).map_err(error::ProjectGenerationError::Io)?).map_err(error::ProjectGenerationError::ConfigDeserialization)
   }
 }
