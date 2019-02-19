@@ -11,3 +11,4 @@ vibranium = { path = "../" }
 [dev-dependencies]
 assert_cmd = "0.10"
 predicates = "1"
+toml = "0.4.10"

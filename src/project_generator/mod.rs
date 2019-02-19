@@ -12,9 +12,9 @@ const DEFAULT_CONTRACTS_DIRECTORY: &str = "contracts";
 const DEFAULT_ARTIFACTS_DIRECTORY: &str = "artifacts";
 
 #[derive(Serialize, Deserialize, Debug)]
-struct ProjectConfig {
-  artifacts_dir: String,
-  smart_contract_sources: Vec<String>,
+pub struct ProjectConfig {
+  pub artifacts_dir: String,
+  pub smart_contract_sources: Vec<String>,
 }
 
 pub struct ProjectGenerator;
