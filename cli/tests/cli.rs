@@ -2,7 +2,7 @@ extern crate assert_cmd;
 extern crate predicates;
 
 use std::process::Command;
-use std::fs;
+use std::fs::{self, File};
 use std::path::Path;
 use assert_cmd::prelude::*;
 use predicates::prelude::*;
@@ -62,8 +62,12 @@ fn not_a_vibranium_project() -> Result<(), Box<std::error::Error>> {
 
 #[test]
 fn reset_project() -> Result<(), Box<std::error::Error>> {
+
   let _ = fs::create_dir(TMP_TEST_DIR);
   let project_path = Path::new(TMP_TEST_DIR).join("vibranium_test_dapp__3");
+  let vibranium_dir = project_path.join(".vibranium");
+  let artifacts_dir = project_path.join("artifacts");
+
   fs::create_dir_all(&project_path)?;
 
   let mut cmd = Command::main_binary()?;
@@ -72,10 +76,25 @@ fn reset_project() -> Result<(), Box<std::error::Error>> {
       .arg(&project_path);
   cmd.assert().success();
 
-  assert_eq!(project_path.join(".vibranium").exists(), true);
-  assert_eq!(fs::read_dir(project_path.join(".vibranium")).unwrap().count(), 0);
-  assert_eq!(project_path.join("artifacts").exists(), true);
-  assert_eq!(fs::read_dir(project_path.join("artifacts")).unwrap().count(), 0);
+  assert_eq!(vibranium_dir.exists(), true);
+  assert_eq!(artifacts_dir.exists(), true);
+
+  File::create(vibranium_dir.join("file1"))?;
+  File::create(vibranium_dir.join("file2"))?;
+  File::create(artifacts_dir.join("file1"))?;
+  File::create(artifacts_dir.join("file2"))?;
+
+  assert_eq!(fs::read_dir(&vibranium_dir).unwrap().count(), 2);
+  assert_eq!(fs::read_dir(&artifacts_dir).unwrap().count(), 2);
+
+  let mut cmd = Command::main_binary()?;
+  cmd.arg("reset")
+      .arg("--path")
+      .arg(&project_path);
+  cmd.assert().success();
+
+  assert_eq!(fs::read_dir(&vibranium_dir).unwrap().count(), 0);
+  assert_eq!(fs::read_dir(&artifacts_dir).unwrap().count(), 0);
   
   let _ = fs::remove_dir_all(project_path);
   Ok(())
