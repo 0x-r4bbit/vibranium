@@ -10,7 +10,7 @@ use std::path::{PathBuf};
 use assert_cmd::prelude::*;
 use predicates::prelude::*;
 use tempfile::{tempdir, TempDir} ;
-use vibranium::project_generator::ProjectConfig;
+use vibranium::config::ProjectConfig;
 
 fn setup_vibranium_project() -> Result<(TempDir, PathBuf), Box<std::error::Error>> {
   let tmp_dir = tempdir()?;

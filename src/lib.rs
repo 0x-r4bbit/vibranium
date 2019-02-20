@@ -1,5 +1,6 @@
 pub mod blockchain;
 pub mod project_generator;
+pub mod config;
 
 use std::process::ExitStatus;
 use std::path::PathBuf;

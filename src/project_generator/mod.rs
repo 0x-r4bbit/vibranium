@@ -4,18 +4,14 @@ use std::path::{PathBuf};
 use std::fs;
 use std::io::Write;
 
+use crate::config;
+
 pub mod error;
 
 const VIBRANIUM_CONFIG_FILE: &str = "vibranium.toml";
 const VIBRANIUM_PROJECT_DIRECTORY: &str = ".vibranium";
 const DEFAULT_CONTRACTS_DIRECTORY: &str = "contracts";
 const DEFAULT_ARTIFACTS_DIRECTORY: &str = "artifacts";
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ProjectConfig {
-  pub artifacts_dir: String,
-  pub smart_contract_sources: Vec<String>,
-}
 
 pub struct ProjectGenerator;
 
@@ -36,16 +32,16 @@ impl ProjectGenerator {
     if !config_path.exists() {
       directories_to_create.push(DEFAULT_ARTIFACTS_DIRECTORY.to_string());
 
-      let config = ProjectConfig {
+      let config = config::ProjectConfig {
         artifacts_dir: DEFAULT_ARTIFACTS_DIRECTORY.to_string(),
         smart_contract_sources: vec![DEFAULT_CONTRACTS_DIRECTORY.to_string() + "/**"]
       };
 
-      let config_toml = toml::to_string(&config).map_err(error::ProjectGenerationError::ConfigSerialization)?;
+      let config_toml = toml::to_string(&config).map_err(error::ProjectGenerationError::Serialization)?;
       let mut config_file = fs::File::create(config_path).map_err(error::ProjectGenerationError::Io)?;
       config_file.write_all(config_toml.as_bytes()).map_err(error::ProjectGenerationError::Io)?;
     } else {
-      let existing_config = ProjectGenerator::read_config(&config_path)?;
+      let existing_config = config::read(&config_path).map_err(error::ProjectGenerationError::InvalidConfig)?;
       directories_to_create.push(existing_config.artifacts_dir);
     }
 
@@ -70,13 +66,9 @@ impl ProjectGenerator {
     let _ = fs::remove_dir_all(project_path.join(DEFAULT_ARTIFACTS_DIRECTORY));
 
     if config_path.exists() {
-      let existing_config = ProjectGenerator::read_config(&config_path)?;
+      let existing_config = config::read(&config_path).map_err(error::ProjectGenerationError::InvalidConfig)?;
       let _ = fs::remove_dir_all(project_path.join(existing_config.artifacts_dir));
     }
     Ok(())
-  }
-
-  fn read_config(path: &PathBuf) -> Result<ProjectConfig, error::ProjectGenerationError> {
-    toml::from_str(&fs::read_to_string(path).map_err(error::ProjectGenerationError::Io)?).map_err(error::ProjectGenerationError::ConfigDeserialization)
   }
 }
