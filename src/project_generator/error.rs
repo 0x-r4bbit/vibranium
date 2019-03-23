@@ -16,14 +16,13 @@ pub enum ProjectGenerationError {
 
 impl Error for ProjectGenerationError {
   fn description(&self) -> &str {
-    let description = match self {
+    match self {
       ProjectGenerationError::InvalidConfig(error) => error.description(),
       ProjectGenerationError::ProjectPathNotFound => "Couldn't find directory for given project path",
       ProjectGenerationError::VibraniumDirectoryNotFound => "Couldn't find .vibranium directory",
       ProjectGenerationError::Io(error) => error.description(),
       ProjectGenerationError::Serialization(error) => error.description(),
-    };
-    return description
+    }
   }
 
   fn cause(&self) -> Option<&Error> {

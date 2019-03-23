@@ -13,12 +13,11 @@ pub enum ConfigError {
 
 impl Error for ConfigError {
   fn description(&self) -> &str {
-    let description = match self {
+    match self {
       ConfigError::Serialization(error) => error.description(),
       ConfigError::Deserialization(error) => error.description(),
       ConfigError::Io(error) => error.description(),
-    };
-    return description
+    }
   }
 
   fn cause(&self) -> Option<&Error> {

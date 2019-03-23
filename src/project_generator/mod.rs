@@ -13,6 +13,7 @@ const VIBRANIUM_PROJECT_DIRECTORY: &str = ".vibranium";
 const DEFAULT_CONTRACTS_DIRECTORY: &str = "contracts";
 const DEFAULT_ARTIFACTS_DIRECTORY: &str = "artifacts";
 
+#[derive(Default)]
 pub struct ProjectGenerator;
 
 impl ProjectGenerator {
@@ -62,13 +63,14 @@ impl ProjectGenerator {
       return Err(error::ProjectGenerationError::VibraniumDirectoryNotFound);
     }
 
-    let _ = fs::remove_dir_all(vibranium_project_directory);
-    let _ = fs::remove_dir_all(project_path.join(DEFAULT_ARTIFACTS_DIRECTORY));
-
     if config_path.exists() {
       let existing_config = config::read(&config_path).map_err(error::ProjectGenerationError::InvalidConfig)?;
       let _ = fs::remove_dir_all(project_path.join(existing_config.artifacts_dir));
     }
+
+    let _ = fs::remove_dir_all(vibranium_project_directory);
+    let _ = fs::remove_dir_all(project_path.join(DEFAULT_ARTIFACTS_DIRECTORY));
+
     Ok(())
   }
 }
