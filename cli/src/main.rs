@@ -10,8 +10,10 @@ use clap::{App, SubCommand, Arg};
 
 use vibranium::Vibranium;
 use vibranium::blockchain::NodeConfig;
+use vibranium::compiler::CompilerConfig;
 
 const DEFAULT_NODE_CLIENT: &str = "parity";
+const DEFAULT_COMPILER: &str = "solc";
 
 type Error = Box<std::error::Error>;
 
@@ -59,6 +61,25 @@ fn run() -> Result<(), Error> {
                       .help("Specifies path to Vibranium project to reset")
                       .takes_value(true))
                   )
+                  .subcommand(SubCommand::with_name("compile")
+                    .about("Compiles Smart Contracts from Vibranium project")
+                    .arg(Arg::with_name("compiler")
+                      .short("c")
+                      .long("compiler")
+                      .value_name("COMPILER_BINARY")
+                      .help("Specifies compiler used to compile Smart Contracts")
+                      .takes_value(true))
+                    .arg(Arg::with_name("path")
+                      .short("p")
+                      .long("path")
+                      .value_name("PATH")
+                      .help("Specifies path to Vibranium project to compile")
+                      .takes_value(true))
+                    .arg(Arg::with_name("compiler-opts")
+                      .value_name("OPTIONS")
+                      .help("Specifies compiler specific options that will be passed down to the compiler")
+                      .multiple(true)
+                      .raw(true))
                   ).get_matches();
 
   if let ("node", Some(cmd)) = matches.subcommand() {
@@ -92,6 +113,26 @@ fn run() -> Result<(), Error> {
     let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
     let vibranium = Vibranium::new(path);
     vibranium.reset_project().and_then(|_| Ok(println!("Done.")))?
+  }
+
+  if let("compile", Some(cmd)) = matches.subcommand() {
+    let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
+    let compiler_bin = cmd.value_of("compiler").unwrap_or(DEFAULT_COMPILER);
+
+    let mut compiler_options = vec![];
+
+    if let Some(options) = cmd.values_of("compiler-opts") {
+      compiler_options = options.collect();
+    }
+
+    let vibranium = Vibranium::new(path);
+
+    let config = CompilerConfig {
+      compiler: compiler_bin.to_string(),
+      compiler_options,
+    };
+
+    vibranium.compile(config)?;
   }
 
   Ok(())

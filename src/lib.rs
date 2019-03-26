@@ -1,12 +1,14 @@
 pub mod blockchain;
 pub mod project_generator;
+pub mod compiler;
 pub mod config;
 
-use std::process::ExitStatus;
+use std::process::{ExitStatus};
 use std::path::PathBuf;
 
 #[macro_use]
 extern crate serde_derive;
+extern crate glob;
 
 #[derive(Debug)]
 pub struct Vibranium {
@@ -39,5 +41,12 @@ impl Vibranium {
     generator
       .reset_project(&self.project_path)
       .and_then(|_| generator.generate_project(&self.project_path))
+  }
+
+  pub fn compile(&self, config: compiler::CompilerConfig) -> Result<ExitStatus, compiler::error::CompilerError> {
+    let compiler = compiler::Compiler::new(&self.config);
+    compiler.compile(config)
+      .map(|mut process| process.wait().map_err(compiler::error::CompilerError::Io))
+      .and_then(|status| status)
   }
 }
