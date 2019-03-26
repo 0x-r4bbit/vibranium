@@ -11,12 +11,14 @@ extern crate serde_derive;
 #[derive(Debug)]
 pub struct Vibranium {
   project_path: PathBuf,
+  config: config::Config,
 }
 
 impl Vibranium {
   pub fn new(project_path: PathBuf) -> Vibranium {
     Vibranium {
-      project_path
+      config: config::Config::new(project_path.clone()),
+      project_path,
     }
   }
 
@@ -28,12 +30,12 @@ impl Vibranium {
   }
 
   pub fn init_project(&self) -> Result<(), project_generator::error::ProjectGenerationError> {
-    let generator = project_generator::ProjectGenerator::new();
+    let generator = project_generator::ProjectGenerator::new(&self.config);
     generator.generate_project(&self.project_path)
   }
 
   pub fn reset_project(&self) -> Result<(), project_generator::error::ProjectGenerationError> {
-    let generator = project_generator::ProjectGenerator::new();
+    let generator = project_generator::ProjectGenerator::new(&self.config);
     generator
       .reset_project(&self.project_path)
       .and_then(|_| generator.generate_project(&self.project_path))

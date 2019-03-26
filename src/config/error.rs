@@ -34,7 +34,7 @@ impl fmt::Display for ConfigError {
     match self {
       ConfigError::Serialization(error) => write!(f, "Couldn't serialize vibranium config: {}", error),
       ConfigError::Deserialization(error) => write!(f, "Couldn't deserialize vibranium config: {}", error),
-      ConfigError::Io(error) => write!(f, "{}", error),
+      ConfigError::Io(error) => write!(f, "Couldn't access configuration file: {}", error),
     }
   }
 }
