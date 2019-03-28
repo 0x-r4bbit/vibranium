@@ -116,6 +116,7 @@ fn run() -> Result<(), Error> {
   }
 
   if let("compile", Some(cmd)) = matches.subcommand() {
+    println!("Compiling Vibranium project...");
     let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
     let compiler_bin = cmd.value_of("compiler").unwrap_or(DEFAULT_COMPILER);
 
@@ -132,7 +133,7 @@ fn run() -> Result<(), Error> {
       compiler_options,
     };
 
-    vibranium.compile(config)?;
+    vibranium.compile(config).and_then(|_| Ok(println!("Done.")))?;
   }
 
   Ok(())
