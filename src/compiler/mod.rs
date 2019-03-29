@@ -1,6 +1,7 @@
 pub mod error;
 
 use std::process::{Command, Child};
+use std::path::{PathBuf};
 use glob::glob;
 use crate::config;
 
@@ -33,9 +34,9 @@ impl<'a> Compiler<'a> {
     ];
 
     for pattern in project_config.smart_contract_sources {
-      let mut full_pattern = self.config.project_path.to_string_lossy().to_string();
-      full_pattern.push_str(&pattern);
-      for entry in glob(&full_pattern).unwrap().filter_map(Result::ok) {
+      let mut full_pattern = PathBuf::from(&self.config.project_path);
+      full_pattern.push(&pattern);
+      for entry in glob(&full_pattern.to_str().unwrap()).unwrap().filter_map(Result::ok) {
         args.push(entry.to_string_lossy().to_string());
       }
     }
