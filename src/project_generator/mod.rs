@@ -56,11 +56,8 @@ impl<'a> ProjectGenerator<'a> {
   }
 
   pub fn reset_project(&self, project_path: &PathBuf) -> Result<(), error::ProjectGenerationError> {
+    self.check_vibranium_dir_exists()?;
     let vibranium_project_directory = project_path.join(VIBRANIUM_PROJECT_DIRECTORY);
-
-    if !vibranium_project_directory.exists() {
-      return Err(error::ProjectGenerationError::VibraniumDirectoryNotFound);
-    }
 
     if self.config.exists() {
       let existing_config = self.config.read().map_err(error::ProjectGenerationError::InvalidConfig)?;
@@ -70,6 +67,15 @@ impl<'a> ProjectGenerator<'a> {
     let _ = fs::remove_dir_all(vibranium_project_directory);
     let _ = fs::remove_dir_all(project_path.join(DEFAULT_ARTIFACTS_DIRECTORY));
 
+    Ok(())
+  }
+
+  pub fn check_vibranium_dir_exists(&self) -> Result<(), error::ProjectGenerationError> {
+    let vibranium_project_directory = self.config.project_path.join(VIBRANIUM_PROJECT_DIRECTORY);
+
+    if !vibranium_project_directory.exists() {
+      return Err(error::ProjectGenerationError::VibraniumDirectoryNotFound);
+    }
     Ok(())
   }
 }

@@ -45,8 +45,11 @@ impl Vibranium {
 
   pub fn compile(&self, config: compiler::CompilerConfig) -> Result<ExitStatus, compiler::error::CompilerError> {
     let compiler = compiler::Compiler::new(&self.config);
-    compiler.compile(config)
-      .map(|mut process| process.wait().map_err(compiler::error::CompilerError::Io))
+    let generator = project_generator::ProjectGenerator::new(&self.config);
+
+    generator
+      .check_vibranium_dir_exists().map_err(compiler::error::CompilerError::VibraniumDirectoryNotFound)
+      .and_then(|_| compiler.compile(config).map(|mut process| process.wait().map_err(compiler::error::CompilerError::Io)))
       .and_then(|status| status)
   }
 }

@@ -3,10 +3,12 @@ use std::fmt;
 use std::io;
 
 use crate::config;
+use crate::project_generator;
 
 #[derive(Debug)]
 pub enum CompilerError {
   Io(io::Error),
+  VibraniumDirectoryNotFound(project_generator::error::ProjectGenerationError),
   InvalidConfig(config::error::ConfigError),
 }
 
@@ -19,6 +21,7 @@ impl Error for CompilerError {
           _ => error.description(),
         }
       },
+      CompilerError::VibraniumDirectoryNotFound(error) => error.description(),
       CompilerError::InvalidConfig(error) => error.description(),
     }
   }
@@ -26,6 +29,7 @@ impl Error for CompilerError {
   fn cause(&self) -> Option<&Error> {
     match self {
       CompilerError::Io(error) => Some(error),
+      CompilerError::VibraniumDirectoryNotFound(error) => Some(error),
       CompilerError::InvalidConfig(error) => Some(error),
     }
   }
@@ -35,6 +39,7 @@ impl fmt::Display for CompilerError {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
       CompilerError::Io(error) => write!(f, "{}", error),
+      CompilerError::VibraniumDirectoryNotFound(error) => write!(f, "{}", error),
       CompilerError::InvalidConfig(error) => write!(f, "{}", error),
     }
   }
