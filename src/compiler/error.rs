@@ -38,7 +38,7 @@ impl Error for CompilerError {
 impl fmt::Display for CompilerError {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      CompilerError::Io(error) => write!(f, "{}", error),
+      CompilerError::Io(_error) => write!(f, "{}", self.description()),
       CompilerError::VibraniumDirectoryNotFound(error) => write!(f, "{}", error),
       CompilerError::InvalidConfig(error) => write!(f, "{}", error),
     }
