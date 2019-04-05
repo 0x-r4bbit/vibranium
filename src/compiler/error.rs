@@ -10,6 +10,7 @@ pub enum CompilerError {
   Io(io::Error),
   VibraniumDirectoryNotFound(project_generator::error::ProjectGenerationError),
   InvalidConfig(config::error::ConfigError),
+  UnsupportedStrategy,
 }
 
 impl Error for CompilerError {
@@ -23,6 +24,7 @@ impl Error for CompilerError {
       },
       CompilerError::VibraniumDirectoryNotFound(error) => error.description(),
       CompilerError::InvalidConfig(error) => error.description(),
+      CompilerError::UnsupportedStrategy => "Couldn't compile project. Requested compiler not supported.",
     }
   }
 
@@ -31,6 +33,7 @@ impl Error for CompilerError {
       CompilerError::Io(error) => Some(error),
       CompilerError::VibraniumDirectoryNotFound(error) => Some(error),
       CompilerError::InvalidConfig(error) => Some(error),
+      CompilerError::UnsupportedStrategy => None,
     }
   }
 }
@@ -41,6 +44,7 @@ impl fmt::Display for CompilerError {
       CompilerError::Io(_error) => write!(f, "{}", self.description()),
       CompilerError::VibraniumDirectoryNotFound(error) => write!(f, "{}", error),
       CompilerError::InvalidConfig(error) => write!(f, "{}", error),
+      CompilerError::UnsupportedStrategy => write!(f, "{}", self.description()),
     }
   }
 }
