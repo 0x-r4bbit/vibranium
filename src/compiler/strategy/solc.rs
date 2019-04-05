@@ -28,8 +28,10 @@ impl<'a> Strategy for SolcStrategy<'a> {
   fn execute(&self) -> Result<Child, std::io::Error> {
 
     let mut args: Vec<String> = vec![
-      "--ast-json".to_string(),
       "--abi".to_string(),
+      "--metadata".to_string(),
+      "--userdoc".to_string(),
+      "--overwrite".to_string(),
       "-o".to_string(),
       self.config.output_path.to_string_lossy().to_string()
     ];
@@ -41,8 +43,6 @@ impl<'a> Strategy for SolcStrategy<'a> {
         args.push(entry.to_string_lossy().to_string());
       }
     }
-
-    args.push("--overwrite".to_string());
 
     Command::new(SOLC_COMPILER_BINARY)
       .args(args)
