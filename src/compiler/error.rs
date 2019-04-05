@@ -24,7 +24,7 @@ impl Error for CompilerError {
       },
       CompilerError::VibraniumDirectoryNotFound(error) => error.description(),
       CompilerError::InvalidConfig(error) => error.description(),
-      CompilerError::UnsupportedStrategy => "Couldn't compile project. Requested compiler not supported.",
+      CompilerError::UnsupportedStrategy => "Couldn't compile project without `CompilerConfig::compiler_options`. No built-in support for requested compiler.",
     }
   }
 

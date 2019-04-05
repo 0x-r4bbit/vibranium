@@ -12,6 +12,8 @@ use vibranium::Vibranium;
 use vibranium::blockchain::NodeConfig;
 use vibranium::compiler::CompilerConfig;
 
+mod error;
+
 const DEFAULT_NODE_CLIENT: &str = "parity";
 const DEFAULT_COMPILER: &str = "solc";
 
@@ -133,7 +135,7 @@ fn run() -> Result<(), Error> {
       compiler_options,
     };
 
-    vibranium.compile(config).and_then(|_| Ok(println!("Done.")))?;
+    vibranium.compile(config).map_err(error::CliError::CompilationError).and_then(|_| Ok(println!("Done.")))?;
   }
 
   Ok(())

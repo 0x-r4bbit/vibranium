@@ -122,7 +122,7 @@ fn it_should_honor_changes_in_vibranium_toml_when_resetting_project() -> Result<
 }
 
 #[test]
-fn it_fail_when_given_compiler_option_is_not_supported() -> Result<(), Box<std::error::Error>> {
+fn it_should_fail_when_given_compiler_option_is_not_supported_and_no_compiler_options_specificed() -> Result<(), Box<std::error::Error>> {
 
   let (tmp_dir, project_path) = setup_vibranium_project()?;
 
@@ -136,7 +136,7 @@ fn it_fail_when_given_compiler_option_is_not_supported() -> Result<(), Box<std::
 
   cmd.assert()
       .failure()
-      .stderr(predicate::str::contains("Requested compiler not supported"));
+      .stderr(predicate::str::contains("No built-in support for requested compiler"));
 
   tmp_dir.close()?;
   Ok(())

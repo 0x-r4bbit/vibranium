@@ -8,6 +8,7 @@ use std::string::ToString;
 use crate::config;
 use strategy::CompilerStrategy;
 use strategy::solc::{SolcStrategy, SolcStrategyConfig, SOLC_COMPILER_BINARY};
+use strategy::default::DefaultStrategy;
 
 pub enum SupportedCompilers {
   Solc,
@@ -61,7 +62,12 @@ impl<'a> Compiler<'a> {
           compiler_options: config.compiler_options,
         })))
       },
-      Err(err) => return Err(err),
+      Err(err) => {
+        if config.compiler_options.is_empty() {
+          return Err(err)
+        }
+        CompilerStrategy::new(Box::new(DefaultStrategy::new(&config.compiler, config.compiler_options)))
+      },
     };
 
     compiler_strategy.execute().map_err(error::CompilerError::Io)
