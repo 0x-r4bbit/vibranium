@@ -1,5 +1,5 @@
 use super::Strategy;
-use std::process::{Command, Child};
+use std::process::{Command, Child, Stdio};
 use std::path::{PathBuf};
 use glob::glob;
 
@@ -47,6 +47,8 @@ impl<'a> Strategy for SolcStrategy<'a> {
     Command::new(SOLC_COMPILER_BINARY)
       .args(args)
       .args(&self.config.compiler_options)
+      .stdout(Stdio::piped())
+      .stderr(Stdio::piped())
       .spawn()
   }
 }

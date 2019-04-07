@@ -3,7 +3,7 @@ pub mod project_generator;
 pub mod compiler;
 pub mod config;
 
-use std::process::{ExitStatus};
+use std::process::{ExitStatus, Output};
 use std::path::PathBuf;
 
 #[macro_use]
@@ -43,13 +43,25 @@ impl Vibranium {
       .and_then(|_| generator.generate_project(&self.project_path))
   }
 
-  pub fn compile(&self, config: compiler::CompilerConfig) -> Result<ExitStatus, compiler::error::CompilerError> {
+  pub fn compile(&self, config: compiler::CompilerConfig) -> Result<Output, compiler::error::CompilerError> {
     let compiler = compiler::Compiler::new(&self.config);
     let generator = project_generator::ProjectGenerator::new(&self.config);
 
     generator
-      .check_vibranium_dir_exists().map_err(compiler::error::CompilerError::VibraniumDirectoryNotFound)
-      .and_then(|_| compiler.compile(config).map(|mut process| process.wait().map_err(compiler::error::CompilerError::Io)))
-      .and_then(|status| status)
+      .check_vibranium_dir_exists()
+      .map_err(compiler::error::CompilerError::VibraniumDirectoryNotFound)
+      .and_then(|_| {
+        compiler.compile(config).map(|process| {
+          process.wait_with_output().map_err(compiler::error::CompilerError::Io)
+        })
+      })
+      .and_then(|output| output)
+      .and_then(|output| {
+        if !output.stderr.is_empty() {
+          Err(compiler::error::CompilerError::Other(String::from_utf8_lossy(&output.stderr).to_string()))
+        } else {
+          Ok(output)
+        }
+      })
   }
 }
