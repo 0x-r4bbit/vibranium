@@ -35,7 +35,7 @@ impl<'a> ProjectGenerator<'a> {
 
       let config = config::ProjectConfig {
         artifacts_dir: DEFAULT_ARTIFACTS_DIRECTORY.to_string(),
-        smart_contract_sources: vec![DEFAULT_CONTRACTS_DIRECTORY.to_string() + "/**"]
+        smart_contract_sources: vec![DEFAULT_CONTRACTS_DIRECTORY.to_string() + "/*.sol"]
       };
 
       let config_toml = toml::to_string(&config).map_err(error::ProjectGenerationError::Serialization)?;
