@@ -1,3 +1,5 @@
+[![Build Status](https://dev.azure.com/pascalprecht/vibranium/_apis/build/status/pascalprecht.vibranium?branchName=master)](https://dev.azure.com/pascalprecht/vibranium/_build?definitionId=1)
+
 # Vibranium
 
 > Developer tools for building decentralized applications.
