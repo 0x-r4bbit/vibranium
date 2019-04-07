@@ -5,6 +5,7 @@ extern crate vibranium;
 use std::env;
 use std::process;
 use std::path::PathBuf;
+use std::io::{self, Write};
 
 use clap::{App, SubCommand, Arg};
 
@@ -21,8 +22,11 @@ type Error = Box<std::error::Error>;
 
 fn main() {
   if let Err(e) = run() {
+    eprintln!("Aborted due to error:\n");
     eprintln!("{}", e);
     process::exit(1);
+  } else {
+    println!("Done.");
   }
 }
 
@@ -85,6 +89,7 @@ fn run() -> Result<(), Error> {
                   ).get_matches();
 
   if let ("node", Some(cmd)) = matches.subcommand() {
+    println!("Starting blockchain node...");
     let vibranium = Vibranium::new(env::current_dir()?);
 
     let client = cmd.value_of("client").unwrap_or(DEFAULT_NODE_CLIENT);
@@ -107,14 +112,14 @@ fn run() -> Result<(), Error> {
     let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
     let vibranium = Vibranium::new(path);
 
-    vibranium.init_project().and_then(|_| Ok(println!("Done.")))?
+    vibranium.init_project()?
   }
 
   if let ("reset", Some(cmd)) = matches.subcommand() {
     println!("Resetting Vibranium project...");
     let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
     let vibranium = Vibranium::new(path);
-    vibranium.reset_project().and_then(|_| Ok(println!("Done.")))?
+    vibranium.reset_project()?
   }
 
   if let("compile", Some(cmd)) = matches.subcommand() {
@@ -135,7 +140,13 @@ fn run() -> Result<(), Error> {
       compiler_options,
     };
 
-    vibranium.compile(config).map_err(error::CliError::CompilationError).and_then(|_| Ok(println!("Done.")))?;
+    vibranium
+      .compile(config)
+      .map_err(error::CliError::CompilationError)
+      .and_then(|output| {
+        io::stdout().write_all(&output.stdout).unwrap();
+        Ok(())
+      })?
   }
 
   Ok(())

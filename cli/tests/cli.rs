@@ -141,3 +141,21 @@ fn it_should_fail_when_given_compiler_option_is_not_supported_and_no_compiler_op
   tmp_dir.close()?;
   Ok(())
 }
+
+#[test]
+fn it_should_fail_when_compiler_program_fails() -> Result<(), Box<std::error::Error>> {
+
+  let (tmp_dir, project_path) = setup_vibranium_project()?;
+
+  let mut cmd = Command::main_binary()?;
+
+  cmd.arg("compile")
+      .arg("--path")
+      .arg(&project_path);
+
+  cmd.assert()
+      .failure();
+
+  tmp_dir.close()?;
+  Ok(())
+}
