@@ -1,23 +1,15 @@
-use super::Strategy;
+use super::{Strategy, StrategyConfig};
 use std::process::{Command, Child, Stdio};
-use std::path::{PathBuf};
 use glob::glob;
 
 pub const SOLC_COMPILER_BINARY: &str = "solc";
 
-pub struct SolcStrategyConfig<'a> {
-  pub input_path: PathBuf,
-  pub output_path: PathBuf,
-  pub smart_contract_sources: Vec<String>,
-  pub compiler_options: Vec<&'a str>,
-}
-
 pub struct SolcStrategy<'a> {
-  config: SolcStrategyConfig<'a>
+  config: StrategyConfig<'a>
 }
 
 impl<'a> SolcStrategy<'a> {
-  pub fn new(config: SolcStrategyConfig) -> SolcStrategy {
+  pub fn new(config: StrategyConfig) -> SolcStrategy {
     SolcStrategy {
       config
     }
