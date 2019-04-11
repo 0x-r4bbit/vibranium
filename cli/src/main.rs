@@ -127,7 +127,7 @@ fn run() -> Result<(), Error> {
     let vibranium = Vibranium::new(path);
 
     let compiler_options = cmd.values_of("compiler-opts").map(|options| {
-      options.map(|val| val.to_string()).collect()
+      options.map(std::string::ToString::to_string).collect()
     });
 
     let config = CompilerConfig {
