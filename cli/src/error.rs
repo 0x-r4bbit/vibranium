@@ -16,9 +16,15 @@ impl Error for CliError {
       CliError::CompilationError(error) => {
         match error {
           CompilerError::UnsupportedStrategy => r###"No built-in support for requested compiler.
-To use this compiler, specify ARGS in compile command. E.g:
+To use this compiler, please specify necessary OPTIONS in compile command. E.g:
 
-  vibranium compile --compiler solcjs -- <ARGS>..."###,
+  vibranium compile --compiler solcjs -- <OPTIONS>...
+
+OPTIONS can also be specified in the project's vibranium.toml file:
+
+  [compiler]
+    options = ["--option1", "--option2"]
+"###,
           _ => error.description()
 
         }

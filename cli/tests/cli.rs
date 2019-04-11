@@ -5,14 +5,15 @@ extern crate toml;
 extern crate tempfile;
 
 use std::process::Command;
-use std::fs::{self, File};
+use std::fs::{self, File, OpenOptions};
+use std::io::Write;
 use std::path::{PathBuf};
 use assert_cmd::prelude::*;
 use predicates::prelude::*;
 use tempfile::{tempdir, TempDir} ;
-use vibranium::config::ProjectConfig;
+use vibranium::config::{ProjectConfig, ProjectCompilerConfig};
 
-fn setup_vibranium_project() -> Result<(TempDir, PathBuf), Box<std::error::Error>> {
+fn setup_vibranium_project(config: Option<ProjectConfig>) -> Result<(TempDir, PathBuf), Box<std::error::Error>> {
   let tmp_dir = tempdir()?;
   let project_path = tmp_dir.path().join("test_dapp");
   let _ = fs::create_dir(&project_path);
@@ -22,6 +23,15 @@ fn setup_vibranium_project() -> Result<(TempDir, PathBuf), Box<std::error::Error
       .arg("--path")
       .arg(&project_path);
   cmd.assert().success();
+
+  if let Some(cfg) = config {
+    let config_toml = toml::to_string(&cfg).unwrap();
+    let mut config_file = OpenOptions::new()
+      .write(true)
+      .open(&project_path.join("vibranium.toml")).unwrap();
+    config_file.write_all(config_toml.as_bytes()).unwrap();
+  }
+
   Ok((tmp_dir, project_path))
 }
 
@@ -39,7 +49,7 @@ fn it_should_fail_on_init_if_project_path_doesnt_exist() -> Result<(), Box<std::
 
 #[test]
 fn it_should_initialize_project() -> Result<(), Box<std::error::Error>> {
-  let (tmp_dir, project_path) = setup_vibranium_project()?;
+  let (tmp_dir, project_path) = setup_vibranium_project(None)?;
 
   assert_eq!(project_path.join(".vibranium").exists(), true);
   assert_eq!(project_path.join("artifacts").exists(), true);
@@ -69,7 +79,7 @@ fn it_should_fail_on_reset_if_project_is_not_a_vibranium_project() -> Result<(),
 #[test]
 fn it_should_reset_project() -> Result<(), Box<std::error::Error>> {
 
-  let (tmp_dir, project_path) = setup_vibranium_project()?;
+  let (tmp_dir, project_path) = setup_vibranium_project(None)?;
   let vibranium_dir = project_path.join(".vibranium");
   let artifacts_dir = project_path.join("artifacts");
 
@@ -100,7 +110,7 @@ fn it_should_reset_project() -> Result<(), Box<std::error::Error>> {
 #[test]
 fn it_should_honor_changes_in_vibranium_toml_when_resetting_project() -> Result<(), Box<std::error::Error>> {
 
-  let (tmp_dir, project_path) = setup_vibranium_project()?;
+  let (tmp_dir, project_path) = setup_vibranium_project(None)?;
   let config_path = project_path.join("vibranium.toml");
   let updated_artifacts_dir: &str = "test_artifacts";
 
@@ -124,7 +134,7 @@ fn it_should_honor_changes_in_vibranium_toml_when_resetting_project() -> Result<
 #[test]
 fn it_should_fail_when_given_compiler_option_is_not_supported_and_no_compiler_options_specificed() -> Result<(), Box<std::error::Error>> {
 
-  let (tmp_dir, project_path) = setup_vibranium_project()?;
+  let (tmp_dir, project_path) = setup_vibranium_project(None)?;
 
   let mut cmd = Command::main_binary()?;
 
@@ -143,9 +153,40 @@ fn it_should_fail_when_given_compiler_option_is_not_supported_and_no_compiler_op
 }
 
 #[test]
+fn it_should_fail_when_given_compiler_is_not_installed() -> Result<(), Box<std::error::Error>> {
+
+  // Vibranium won't even try to execute a compiler that it doesn't support
+  // unless a users specifies all the needed options. That's why we overwrite
+  // the config to use compiler.options as well as compiler.cmd.
+  let config = ProjectConfig {
+    artifacts_dir: "artifacts".to_string(),
+    smart_contract_sources: vec!["contracts/*.sol".to_string()],
+    compiler: Some(ProjectCompilerConfig {
+      cmd: Some("unsupported".to_string()),
+      options: Some(vec!["--some-option".to_string()])
+    })
+  };
+
+  let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
+
+  let mut cmd = Command::main_binary()?;
+
+  cmd.arg("compile")
+      .arg("--path")
+      .arg(&project_path);
+
+  cmd.assert()
+      .failure()
+      .stderr(predicate::str::contains("Couldn't find executable for requested compiler"));
+
+  tmp_dir.close()?;
+  Ok(())
+}
+
+#[test]
 fn it_should_fail_when_compiler_program_fails() -> Result<(), Box<std::error::Error>> {
 
-  let (tmp_dir, project_path) = setup_vibranium_project()?;
+  let (tmp_dir, project_path) = setup_vibranium_project(None)?;
 
   let mut cmd = Command::main_binary()?;
 
@@ -155,6 +196,73 @@ fn it_should_fail_when_compiler_program_fails() -> Result<(), Box<std::error::Er
       .arg("--path")
       .arg(&project_path);
 
+  // We don't provide any source files to solcjs, so we know it
+  // will fail with the error message below.
+  cmd.assert()
+      .failure()
+      .stderr(predicate::str::contains("Must provide a file"));
+
+  tmp_dir.close()?;
+  Ok(())
+}
+
+#[test]
+fn it_should_honor_compiler_options_specified_in_config_file() -> Result<(), Box<std::error::Error>> {
+
+  // We overwrite the default configuration to set the compiler
+  // to `solcjs`. Vibranium uses `solc` as default.
+  let config = ProjectConfig {
+    artifacts_dir: "artifacts".to_string(),
+    smart_contract_sources: vec!["contracts/*.sol".to_string()],
+    compiler: Some(ProjectCompilerConfig {
+      cmd: Some("solcjs".to_string()),
+      options: None
+    })
+  };
+
+  let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
+
+  let mut cmd = Command::main_binary()?;
+
+  // There are no Smart Contract files in the generated project
+  // so if everything goes as expected, this command fails with
+  // `solcjs` exiting with the error message below.
+  cmd.arg("compile")
+      .arg("--path")
+      .arg(&project_path);
+
+  cmd.assert()
+      .failure()
+      .stderr(predicate::str::contains("Must provide a file"));
+  
+  tmp_dir.close()?;
+  Ok(())
+}
+
+#[test]
+fn it_should_override_config_file_compiler_options_with_cli_options() -> Result<(), Box<std::error::Error>> {
+
+  let config = ProjectConfig {
+    artifacts_dir: "artifacts".to_string(),
+    smart_contract_sources: vec!["contracts/*.sol".to_string()],
+    compiler: Some(ProjectCompilerConfig {
+      cmd: Some("ignored".to_string()),
+      options: None
+    })
+  };
+
+  let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
+
+  let mut cmd = Command::main_binary()?;
+
+  cmd.arg("compile")
+      .arg("--compiler")
+      .arg("solcjs")
+      .arg("--path")
+      .arg(&project_path);
+
+  // Failure is the expected behaviour here as we don't provide any Smart Contract
+  // source files to `solcjs`.
   cmd.assert()
       .failure()
       .stderr(predicate::str::contains("Must provide a file"));

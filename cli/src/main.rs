@@ -16,7 +16,6 @@ use vibranium::compiler::CompilerConfig;
 mod error;
 
 const DEFAULT_NODE_CLIENT: &str = "parity";
-const DEFAULT_COMPILER: &str = "solc";
 
 type Error = Box<std::error::Error>;
 
@@ -125,18 +124,14 @@ fn run() -> Result<(), Error> {
   if let("compile", Some(cmd)) = matches.subcommand() {
     println!("Compiling Vibranium project...");
     let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
-    let compiler_bin = cmd.value_of("compiler").unwrap_or(DEFAULT_COMPILER);
-
-    let mut compiler_options = vec![];
-
-    if let Some(options) = cmd.values_of("compiler-opts") {
-      compiler_options = options.collect();
-    }
-
     let vibranium = Vibranium::new(path);
 
+    let compiler_options = cmd.values_of("compiler-opts").map(|options| {
+      options.map(|val| val.to_string()).collect()
+    });
+
     let config = CompilerConfig {
-      compiler: compiler_bin.to_string(),
+      compiler: cmd.value_of("compiler").map(|cmd| cmd.to_string()),
       compiler_options,
     };
 
