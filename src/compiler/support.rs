@@ -15,8 +15,8 @@ impl FromStr for SupportedCompilers {
   type Err = error::CompilerError;
   fn from_str(s: &str) -> Result<Self, Self::Err> {
     match s {
-      SOLC_COMPILER_BINARY => return Ok(SupportedCompilers::Solc),
-      SOLC_JS_COMPILER_BINARY => return Ok(SupportedCompilers::SolcJs),
+      SOLC_COMPILER_BINARY => Ok(SupportedCompilers::Solc),
+      SOLC_JS_COMPILER_BINARY => Ok(SupportedCompilers::SolcJs),
       _ => Err(error::CompilerError::UnsupportedStrategy),
     }
   }

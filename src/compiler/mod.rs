@@ -34,7 +34,7 @@ impl<'a> Compiler<'a> {
 
     let compiler = config.compiler.unwrap_or_else(|| {
       match &project_config.compiler {
-        Some(config) => config.cmd.clone().unwrap_or(SupportedCompilers::Solc.to_string()),
+        Some(config) => config.cmd.clone().unwrap_or_else(|| SupportedCompilers::Solc.to_string()),
         None => SupportedCompilers::Solc.to_string(),
       }
     });
@@ -60,7 +60,7 @@ impl<'a> Compiler<'a> {
       Ok(SupportedCompilers::Solc) => CompilerStrategy::new(Box::new(SolcStrategy::new(strategy_config))),
       Ok(SupportedCompilers::SolcJs) => CompilerStrategy::new(Box::new(SolcJsStrategy::new(strategy_config))),
       Err(err) => {
-        if let None = &compiler_options {
+        if compiler_options.is_none() {
           return Err(err)
         }
         CompilerStrategy::new(Box::new(DefaultStrategy::new(compiler.to_owned(), compiler_options.unwrap())))
