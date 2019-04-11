@@ -9,6 +9,13 @@ pub const VIBRANIUM_CONFIG_FILE: &str = "vibranium.toml";
 pub struct ProjectConfig {
   pub artifacts_dir: String,
   pub smart_contract_sources: Vec<String>,
+  pub compiler: Option<ProjectCompilerConfig>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ProjectCompilerConfig {
+  pub cmd: Option<String>,
+  pub options: Option<Vec<String>>
 }
 
 #[derive(Default, Debug)]

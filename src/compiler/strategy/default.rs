@@ -1,13 +1,13 @@
 use super::Strategy;
 use std::process::{Command, Child, Stdio};
 
-pub struct DefaultStrategy<'a> {
-  pub compiler_bin: &'a str,
-  pub compiler_options: Vec<&'a str>,
+pub struct DefaultStrategy {
+  pub compiler_bin: String,
+  pub compiler_options: Vec<String>,
 }
 
-impl<'a> DefaultStrategy<'a> {
-  pub fn new(compiler_bin: &'a str, compiler_options: Vec<&'a str>) -> DefaultStrategy<'a> {
+impl DefaultStrategy {
+  pub fn new(compiler_bin: String, compiler_options: Vec<String>) -> DefaultStrategy {
     DefaultStrategy {
       compiler_bin,
       compiler_options
@@ -15,7 +15,7 @@ impl<'a> DefaultStrategy<'a> {
   }
 }
 
-impl<'a> Strategy for DefaultStrategy<'a> {
+impl Strategy for DefaultStrategy {
   fn execute(&self) -> Result<Child, std::io::Error> {
     Command::new(&self.compiler_bin)
       .args(&self.compiler_options)

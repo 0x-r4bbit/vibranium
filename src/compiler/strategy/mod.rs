@@ -9,11 +9,11 @@ pub trait Strategy {
   fn execute(&self) -> Result<Child, std::io::Error>;
 }
 
-pub struct StrategyConfig<'a> {
+pub struct StrategyConfig {
   pub input_path: PathBuf,
   pub output_path: PathBuf,
   pub smart_contract_sources: Vec<String>,
-  pub compiler_options: Vec<&'a str>,
+  pub compiler_options: Option<Vec<String>>,
 }
 
 pub struct CompilerStrategy<'a> {
