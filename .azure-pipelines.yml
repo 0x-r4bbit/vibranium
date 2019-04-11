@@ -34,6 +34,12 @@ jobs:
       vmImage: $(imageName)
     steps:
       - script: |
+          add-apt-repository ppa:ethereum/ethereum
+          apt-get update
+          apt-get install solc
+        displayName: Install solc
+        condition: ne( variables['Agent.OS'], 'Windows_NT' )
+      - script: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           echo "##vso[task.setvariable variable=PATH;]$PATH:$HOME/.cargo/bin"
         displayName: Install rust
