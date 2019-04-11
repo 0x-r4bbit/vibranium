@@ -37,8 +37,9 @@ jobs:
           mkdir ../downloads
           cd ../downloads
           curl -L -o solc.tar.gz https://github.com/ethereum/solidity/releases/download/v0.5.7/solidity_0.5.7.tar.gz
-          tar xzvf solc.tar.gz -C solc
-          ls -la
+          tar xzvf solc.tar.gz
+          cd solidity_0.5.7
+          ./scripts/build.sh
         displayName: Install solc
         condition: ne( variables['Agent.OS'], 'Windows_NT' )
       - script: |
