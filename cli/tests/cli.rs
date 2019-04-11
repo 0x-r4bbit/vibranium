@@ -150,6 +150,8 @@ fn it_should_fail_when_compiler_program_fails() -> Result<(), Box<std::error::Er
   let mut cmd = Command::main_binary()?;
 
   cmd.arg("compile")
+      .arg("--compiler")
+      .arg("solcjs")
       .arg("--path")
       .arg(&project_path);
 
