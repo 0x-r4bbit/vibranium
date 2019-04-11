@@ -37,7 +37,7 @@ jobs:
         inputs:
           versionSpec: "10.5.0"
         displayName: Install Node
-      - script: npm install solc
+      - script: npm install solc && solcjs --version
         displayName: Install solcjs
       - script: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
