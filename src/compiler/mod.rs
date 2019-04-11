@@ -41,6 +41,7 @@ impl<'a> Compiler<'a> {
 
     let compiler_strategy = match config.compiler.parse() {
       Ok(SupportedCompilers::Solc) => CompilerStrategy::new(Box::new(SolcStrategy::new(strategy_config))),
+      Ok(SupportedCompilers::SolcJs) => CompilerStrategy::new(Box::new(SolcJsStrategy::new(strategy_config))),
       Err(err) => {
         if config.compiler_options.is_empty() {
           return Err(err)

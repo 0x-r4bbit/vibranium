@@ -1,4 +1,5 @@
 pub mod default;
+pub mod solcjs;
 pub mod solc;
 
 use std::path::{PathBuf};
