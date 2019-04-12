@@ -34,8 +34,10 @@ impl<'a> ProjectGenerator<'a> {
       directories_to_create.push(DEFAULT_ARTIFACTS_DIRECTORY.to_string());
 
       let config = config::ProjectConfig {
-        artifacts_dir: DEFAULT_ARTIFACTS_DIRECTORY.to_string(),
-        smart_contract_sources: vec![DEFAULT_CONTRACTS_DIRECTORY.to_string() + "/*.sol"],
+        sources: config::ProjectSourcesConfig {
+          artifacts: DEFAULT_ARTIFACTS_DIRECTORY.to_string(),
+          smart_contracts: vec![DEFAULT_CONTRACTS_DIRECTORY.to_string() + "/*.sol"],
+        },
         compiler: None,
       };
 
@@ -44,7 +46,7 @@ impl<'a> ProjectGenerator<'a> {
       config_file.write_all(config_toml.as_bytes()).map_err(error::ProjectGenerationError::Io)?;
     } else {
       let existing_config = self.config.read().map_err(error::ProjectGenerationError::InvalidConfig)?;
-      directories_to_create.push(existing_config.artifacts_dir);
+      directories_to_create.push(existing_config.sources.artifacts);
     }
 
     for directory in directories_to_create {
@@ -62,7 +64,7 @@ impl<'a> ProjectGenerator<'a> {
 
     if self.config.exists() {
       let existing_config = self.config.read().map_err(error::ProjectGenerationError::InvalidConfig)?;
-      let _ = fs::remove_dir_all(project_path.join(existing_config.artifacts_dir));
+      let _ = fs::remove_dir_all(project_path.join(existing_config.sources.artifacts));
     }
 
     let _ = fs::remove_dir_all(vibranium_project_directory);

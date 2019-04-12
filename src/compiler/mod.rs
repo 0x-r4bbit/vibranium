@@ -30,7 +30,7 @@ impl<'a> Compiler<'a> {
 
   pub fn compile(&self, config: CompilerConfig) -> Result<Child, error::CompilerError> {
     let project_config = self.config.read().map_err(error::CompilerError::InvalidConfig)?;
-    let artifacts_dir = self.config.project_path.join(&project_config.artifacts_dir);
+    let artifacts_dir = self.config.project_path.join(&project_config.sources.artifacts);
 
     let compiler = config.compiler.unwrap_or_else(|| {
       match &project_config.compiler {
@@ -52,7 +52,7 @@ impl<'a> Compiler<'a> {
     let strategy_config = StrategyConfig {
       input_path: PathBuf::from(&self.config.project_path),
       output_path: artifacts_dir,
-      smart_contract_sources: project_config.smart_contract_sources,
+      smart_contract_sources: project_config.sources.smart_contracts,
       compiler_options: compiler_options.clone()
     };
 
