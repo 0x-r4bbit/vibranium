@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate clap;
 extern crate vibranium;
+extern crate toml;
 
 use std::env;
 use std::process;
@@ -24,8 +25,6 @@ fn main() {
     eprintln!("Aborted due to error:\n");
     eprintln!("{}", e);
     process::exit(1);
-  } else {
-    println!("Done.");
   }
 }
 
@@ -64,6 +63,19 @@ fn run() -> Result<(), Error> {
                       .long("path")
                       .value_name("PATH")
                       .help("Specifies path to Vibranium project to reset")
+                      .takes_value(true))
+                  )
+                  .subcommand(SubCommand::with_name("config")
+                    .about("Reads and writes configuration options of a Vibranium project")
+                    .arg(Arg::with_name("path")
+                      .short("p")
+                      .long("path")
+                      .value_name("PATH")
+                      .help("Specifies path to Vibranium project")
+                      .takes_value(true))
+                    .arg(Arg::with_name("set")
+                      .number_of_values(2)
+                      .value_names(&["CONFIG_OPTION", "VALUE"])
                       .takes_value(true))
                   )
                   .subcommand(SubCommand::with_name("compile")
@@ -111,14 +123,48 @@ fn run() -> Result<(), Error> {
     let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
     let vibranium = Vibranium::new(path);
 
-    vibranium.init_project()?
+    vibranium.init_project().and_then(|_| {
+      println!("Done.");
+      Ok(())
+    })?
   }
 
   if let ("reset", Some(cmd)) = matches.subcommand() {
     println!("Resetting Vibranium project...");
     let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
     let vibranium = Vibranium::new(path);
-    vibranium.reset_project()?
+    vibranium.reset_project().and_then(|_| {
+      println!("Done.");
+      Ok(())
+    })?
+  }
+
+  if let ("config", Some(cmd)) = matches.subcommand() {
+    let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
+    let vibranium = Vibranium::new(path);
+
+    if let Some(options) = cmd.values_of("set") {
+      let mut args: Vec<String> = options.map(std::string::ToString::to_string).collect();
+      let config_option = args.remove(0);
+      let mut value_arg = args[0].to_owned(); 
+
+      let value = if is_multi_value_arg(&value_arg) {
+
+        remove_multi_value_delimitiers(&mut value_arg);
+        let values: Vec<String> = value_arg.split(",")
+          .map(|s| s.trim())
+          .map(std::string::ToString::to_string)
+          .collect();
+
+        toml::value::Value::try_from(values)
+          .map_err(error::CliError::ConfigurationSetError)?
+      } else {
+        toml::value::Value::try_from(value_arg)
+          .map_err(error::CliError::ConfigurationSetError)?
+      };
+
+      vibranium.set_config(config_option, value)?
+    }
   }
 
   if let("compile", Some(cmd)) = matches.subcommand() {
@@ -140,10 +186,10 @@ fn run() -> Result<(), Error> {
       .map_err(error::CliError::CompilationError)
       .and_then(|output| {
         io::stdout().write_all(&output.stdout).unwrap();
+        println!("Done.");
         Ok(())
       })?
   }
-
   Ok(())
 }
 
@@ -151,3 +197,11 @@ fn pathbuf_from_or_current_dir(path: Option<&str>) -> Result<PathBuf, std::io::E
   path.map(|p| Ok(PathBuf::from(p))).unwrap_or_else(env::current_dir)
 }
 
+fn is_multi_value_arg(value: &str) -> bool {
+  return value.starts_with("[") && value.ends_with("]")
+}
+
+fn remove_multi_value_delimitiers(value: &mut String) -> () {
+  value.remove(0);
+  value.pop();
+}

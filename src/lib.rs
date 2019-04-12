@@ -13,7 +13,7 @@ extern crate glob;
 #[derive(Debug)]
 pub struct Vibranium {
   project_path: PathBuf,
-  config: config::Config,
+  pub config: config::Config,
 }
 
 impl Vibranium {
@@ -41,6 +41,14 @@ impl Vibranium {
     generator
       .reset_project(&self.project_path)
       .and_then(|_| generator.generate_project(&self.project_path))
+  }
+
+  pub fn set_config(&self, option: String, value: toml::Value) -> Result<(), config::error::ConfigError> {
+    let generator = project_generator::ProjectGenerator::new(&self.config);
+    generator
+      .check_vibranium_dir_exists()
+      .map_err(|error| config::error::ConfigError::Other(error.to_string()))
+      .and_then(|_| self.config.write(option, value))
   }
 
   pub fn compile(&self, config: compiler::CompilerConfig) -> Result<Output, compiler::error::CompilerError> {
