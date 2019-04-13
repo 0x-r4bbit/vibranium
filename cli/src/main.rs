@@ -64,6 +64,11 @@ fn run() -> Result<(), Error> {
                       .value_name("PATH")
                       .help("Specifies path to Vibranium project to reset")
                       .takes_value(true))
+                    .arg(Arg::with_name("verbose")
+                      .short("v")
+                      .long("verbose")
+                      .help("Flag to output additional information when running this command")
+                      .takes_value(false))
                   )
                   .subcommand(SubCommand::with_name("config")
                     .about("Reads and writes configuration options of a Vibranium project")
@@ -133,7 +138,15 @@ fn run() -> Result<(), Error> {
     println!("Resetting Vibranium project...");
     let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
     let vibranium = Vibranium::new(path);
-    vibranium.reset_project().and_then(|_| {
+    vibranium.reset_project().and_then(|files| {
+      if cmd.is_present("verbose") {
+        let removed_files = files.into_iter();
+        println!("\n  Removed and reset the following files and directories:\n");
+        for file in removed_files {
+          println!("  {:?}", file);
+        }
+        println!("\n");
+      }
       println!("Done.");
       Ok(())
     })?

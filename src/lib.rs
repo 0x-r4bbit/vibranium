@@ -36,11 +36,14 @@ impl Vibranium {
     generator.generate_project(&self.project_path)
   }
 
-  pub fn reset_project(&self) -> Result<(), project_generator::error::ProjectGenerationError> {
+  pub fn reset_project(&self) -> Result<Vec<PathBuf>, project_generator::error::ProjectGenerationError> {
     let generator = project_generator::ProjectGenerator::new(&self.config);
     generator
       .reset_project(&self.project_path)
-      .and_then(|_| generator.generate_project(&self.project_path))
+      .and_then(|removed_files| {
+        generator.generate_project(&self.project_path)?;
+        Ok(removed_files)
+      })
   }
 
   pub fn set_config(&self, option: String, value: toml::Value) -> Result<(), config::error::ConfigError> {
