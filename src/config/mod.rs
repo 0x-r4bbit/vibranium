@@ -2,7 +2,7 @@ extern crate toml;
 extern crate toml_query;
 pub mod error;
 
-use std::fs::{self, OpenOptions};
+use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
 use toml_query::set::TomlValueSetExt;

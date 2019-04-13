@@ -151,8 +151,8 @@ fn run() -> Result<(), Error> {
       let value = if is_multi_value_arg(&value_arg) {
 
         remove_multi_value_delimitiers(&mut value_arg);
-        let values: Vec<String> = value_arg.split(",")
-          .map(|s| s.trim())
+        let values: Vec<String> = value_arg.split(',')
+          .map(str::trim)
           .map(std::string::ToString::to_string)
           .collect();
 
@@ -177,7 +177,7 @@ fn run() -> Result<(), Error> {
     });
 
     let config = CompilerConfig {
-      compiler: cmd.value_of("compiler").map(|cmd| cmd.to_string()),
+      compiler: cmd.value_of("compiler").map(std::string::ToString::to_string),
       compiler_options,
     };
 
@@ -198,10 +198,10 @@ fn pathbuf_from_or_current_dir(path: Option<&str>) -> Result<PathBuf, std::io::E
 }
 
 fn is_multi_value_arg(value: &str) -> bool {
-  return value.starts_with("[") && value.ends_with("]")
+  value.starts_with('[') && value.ends_with(']')
 }
 
-fn remove_multi_value_delimitiers(value: &mut String) -> () {
+fn remove_multi_value_delimitiers(value: &mut String) {
   value.remove(0);
   value.pop();
 }
