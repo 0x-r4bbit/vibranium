@@ -8,6 +8,8 @@ use std::path::PathBuf;
 
 #[macro_use]
 extern crate serde_derive;
+#[macro_use]
+extern crate log;
 extern crate glob;
 
 #[derive(Debug)]

@@ -1,9 +1,12 @@
 #[macro_use]
 extern crate clap;
+extern crate log;
+extern crate env_logger;
 extern crate vibranium;
 extern crate toml;
 
 use std::env;
+use log::LevelFilter;
 use std::process;
 use std::path::PathBuf;
 use std::io::{self, Write};
@@ -64,6 +67,10 @@ fn run() -> Result<(), Error> {
                       .value_name("PATH")
                       .help("Specifies path to Vibranium project to reset")
                       .takes_value(true))
+                    .arg(Arg::with_name("verbose")
+                      .short("v")
+                      .long("verbose")
+                      .help("Generates verbose output"))
                   )
                   .subcommand(SubCommand::with_name("config")
                     .about("Reads and writes configuration options of a Vibranium project")
@@ -98,6 +105,12 @@ fn run() -> Result<(), Error> {
                       .multiple(true)
                       .raw(true))
                   ).get_matches();
+
+  if let (_, Some(cmd)) = matches.subcommand() {
+    if cmd.is_present("verbose") {
+      env_logger::Builder::from_default_env().filter(None, LevelFilter::Info).init();
+    }
+  }
 
   if let ("node", Some(cmd)) = matches.subcommand() {
     println!("Starting blockchain node...");
