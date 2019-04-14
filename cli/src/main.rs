@@ -49,6 +49,10 @@ fn run() -> Result<(), Error> {
                       .help("Specifies node specific options that will be passed down to the client")
                       .multiple(true)
                       .raw(true))
+                    .arg(Arg::with_name("verbose")
+                      .short("v")
+                      .long("verbose")
+                      .help("Generates verbose output"))
                   )
                   .subcommand(SubCommand::with_name("init")
                     .about("Initializes a Vibranium project inside the current directory, or a given path")
@@ -58,6 +62,10 @@ fn run() -> Result<(), Error> {
                       .value_name("PATH")
                       .help("Specifies path to directory in which to initialize Vibranium project")
                       .takes_value(true))
+                    .arg(Arg::with_name("verbose")
+                      .short("v")
+                      .long("verbose")
+                      .help("Generates verbose output"))
                   )
                   .subcommand(SubCommand::with_name("reset")
                     .about("Resets Vibranium project inside the current directory, or a given path")
@@ -104,6 +112,10 @@ fn run() -> Result<(), Error> {
                       .help("Specifies compiler specific options that will be passed down to the compiler")
                       .multiple(true)
                       .raw(true))
+                    .arg(Arg::with_name("verbose")
+                      .short("v")
+                      .long("verbose")
+                      .help("Generates verbose output"))
                   ).get_matches();
 
   if let (_, Some(cmd)) = matches.subcommand() {

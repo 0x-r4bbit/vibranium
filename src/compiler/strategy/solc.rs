@@ -43,6 +43,8 @@ impl Strategy for SolcStrategy {
       }
     }
 
+    info!("Compiling project using command: {} {}", SOLC_COMPILER_BINARY, compiler_options.join(" "));
+
     Command::new(SOLC_COMPILER_BINARY)
             .args(compiler_options)
             .stdout(Stdio::piped())

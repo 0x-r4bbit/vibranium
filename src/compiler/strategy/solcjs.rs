@@ -38,6 +38,8 @@ impl Strategy for SolcJsStrategy {
       }
     }
 
+    info!("Compiling project using command: {} {}", SOLC_JS_COMPILER_BINARY, compiler_options.join(" "));
+
     Command::new(SOLC_JS_COMPILER_BINARY)
       .args(compiler_options)
       .stdout(Stdio::piped())

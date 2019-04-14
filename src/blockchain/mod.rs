@@ -1,3 +1,5 @@
+extern crate log;
+
 use std::process::{Command, Child};
 
 pub mod error;
@@ -19,6 +21,7 @@ impl<'a> Node<'a> {
   }
 
   pub fn start(&self) -> Result<Child, error::NodeError> {
+    info!("Starting node with command: {} {}", &self.config.client, self.config.client_options.join(" "));
     Command::new(self.config.client)
             .args(self.config.client_options)
             .spawn()

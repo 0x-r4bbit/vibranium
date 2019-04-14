@@ -1,4 +1,5 @@
 extern crate toml;
+extern crate log;
 
 use std::path::{PathBuf};
 use std::fs;
@@ -41,6 +42,7 @@ impl<'a> ProjectGenerator<'a> {
         compiler: None,
       };
 
+      info!("Creating: {}", &self.config.config_file.to_str().unwrap());
       let config_toml = toml::to_string(&config).map_err(error::ProjectGenerationError::Serialization)?;
       let mut config_file = fs::File::create(&self.config.config_file).map_err(error::ProjectGenerationError::Io)?;
       config_file.write_all(config_toml.as_bytes()).map_err(error::ProjectGenerationError::Io)?;
@@ -52,6 +54,7 @@ impl<'a> ProjectGenerator<'a> {
     for directory in directories_to_create {
       let path = project_path.join(directory);
       if !path.exists() {
+        info!("Creating: {}", path.to_str().unwrap());
         fs::create_dir_all(path).map_err(error::ProjectGenerationError::Io)?;
       }
     }

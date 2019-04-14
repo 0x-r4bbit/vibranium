@@ -17,6 +17,7 @@ impl DefaultStrategy {
 
 impl Strategy for DefaultStrategy {
   fn execute(&self) -> Result<Child, std::io::Error> {
+    info!("Compiling project using command: {} {}", &self.compiler_bin, self.compiler_options.join(" "));
     Command::new(&self.compiler_bin)
       .args(&self.compiler_options)
       .stdout(Stdio::piped())
