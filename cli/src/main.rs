@@ -32,7 +32,7 @@ fn main() {
 }
 
 fn run() -> Result<(), Error> {
-  let matches = App::new("Vibranium CLI")
+  let mut app = App::new("Vibranium CLI")
                   .version(crate_version!())
                   .author(crate_authors!())
                   .about("Building DApps made easy")
@@ -116,7 +116,9 @@ fn run() -> Result<(), Error> {
                       .short("v")
                       .long("verbose")
                       .help("Generates verbose output"))
-                  ).get_matches();
+                  );
+
+  let matches = app.clone().get_matches();
 
   if let (_, Some(cmd)) = matches.subcommand() {
     if cmd.is_present("verbose") {
@@ -124,97 +126,104 @@ fn run() -> Result<(), Error> {
     }
   }
 
-  if let ("node", Some(cmd)) = matches.subcommand() {
-    println!("Starting blockchain node...");
-    let vibranium = Vibranium::new(env::current_dir()?);
+  match matches.subcommand() {
+    ("node", Some(cmd)) => {
+      println!("Starting blockchain node...");
+      let vibranium = Vibranium::new(env::current_dir()?);
 
-    let client = cmd.value_of("client").unwrap_or(DEFAULT_NODE_CLIENT);
-    let mut client_options = vec![];
+      let client = cmd.value_of("client").unwrap_or(DEFAULT_NODE_CLIENT);
+      let mut client_options = vec![];
 
-    if let Some(options) = cmd.values_of("client-opts") {
-      client_options = options.collect();
-    }
+      if let Some(options) = cmd.values_of("client-opts") {
+        client_options = options.collect();
+      }
 
-    let config = NodeConfig {
-      client: &client,
-      client_options: &client_options,
-    };
-  
-    vibranium.start_node(config)?;
-  }
-
-  if let ("init", Some(cmd)) = matches.subcommand() {
-    println!("Initializing empty Vibranium project...");
-    let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
-    let vibranium = Vibranium::new(path);
-
-    vibranium.init_project().and_then(|_| {
-      println!("Done.");
-      Ok(())
-    })?
-  }
-
-  if let ("reset", Some(cmd)) = matches.subcommand() {
-    println!("Resetting Vibranium project...");
-    let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
-    let vibranium = Vibranium::new(path);
-    vibranium.reset_project().and_then(|_| {
-      println!("Done.");
-      Ok(())
-    })?
-  }
-
-  if let ("config", Some(cmd)) = matches.subcommand() {
-    let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
-    let vibranium = Vibranium::new(path);
-
-    if let Some(options) = cmd.values_of("set") {
-      let mut args: Vec<String> = options.map(std::string::ToString::to_string).collect();
-      let config_option = args.remove(0);
-      let mut value_arg = args[0].to_owned(); 
-
-      let value = if is_multi_value_arg(&value_arg) {
-
-        remove_multi_value_delimitiers(&mut value_arg);
-        let values: Vec<String> = value_arg.split(',')
-          .map(str::trim)
-          .map(std::string::ToString::to_string)
-          .collect();
-
-        toml::value::Value::try_from(values)
-          .map_err(error::CliError::ConfigurationSetError)?
-      } else {
-        toml::value::Value::try_from(value_arg)
-          .map_err(error::CliError::ConfigurationSetError)?
+      let config = NodeConfig {
+        client: &client,
+        client_options: &client_options,
       };
+    
+      vibranium.start_node(config)?;
+    },
 
-      vibranium.set_config(config_option, value)?
-    }
-  }
+    ("init", Some(cmd)) => {
+      println!("Initializing empty Vibranium project...");
+      let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
+      let vibranium = Vibranium::new(path);
 
-  if let("compile", Some(cmd)) = matches.subcommand() {
-    println!("Compiling Vibranium project...");
-    let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
-    let vibranium = Vibranium::new(path);
-
-    let compiler_options = cmd.values_of("compiler-opts").map(|options| {
-      options.map(std::string::ToString::to_string).collect()
-    });
-
-    let config = CompilerConfig {
-      compiler: cmd.value_of("compiler").map(std::string::ToString::to_string),
-      compiler_options,
-    };
-
-    vibranium
-      .compile(config)
-      .map_err(error::CliError::CompilationError)
-      .and_then(|output| {
-        io::stdout().write_all(&output.stdout).unwrap();
+      vibranium.init_project().and_then(|_| {
         println!("Done.");
         Ok(())
       })?
-  }
+    },
+
+    ("reset", Some(cmd)) => {
+      println!("Resetting Vibranium project...");
+      let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
+      let vibranium = Vibranium::new(path);
+      vibranium.reset_project().and_then(|_| {
+        println!("Done.");
+        Ok(())
+      })?
+    },
+
+    ("config", Some(cmd)) => {
+      let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
+      let vibranium = Vibranium::new(path);
+
+      if let Some(options) = cmd.values_of("set") {
+        let mut args: Vec<String> = options.map(std::string::ToString::to_string).collect();
+        let config_option = args.remove(0);
+        let mut value_arg = args[0].to_owned(); 
+
+        let value = if is_multi_value_arg(&value_arg) {
+
+          remove_multi_value_delimitiers(&mut value_arg);
+          let values: Vec<String> = value_arg.split(',')
+            .map(str::trim)
+            .map(std::string::ToString::to_string)
+            .collect();
+
+          toml::value::Value::try_from(values)
+            .map_err(error::CliError::ConfigurationSetError)?
+        } else {
+          toml::value::Value::try_from(value_arg)
+            .map_err(error::CliError::ConfigurationSetError)?
+        };
+
+        vibranium.set_config(config_option, value)?
+      }
+    },
+
+    ("compile", Some(cmd)) => {
+      println!("Compiling Vibranium project...");
+      let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
+      let vibranium = Vibranium::new(path);
+
+      let compiler_options = cmd.values_of("compiler-opts").map(|options| {
+        options.map(std::string::ToString::to_string).collect()
+      });
+
+      let config = CompilerConfig {
+        compiler: cmd.value_of("compiler").map(std::string::ToString::to_string),
+        compiler_options,
+      };
+
+      vibranium
+        .compile(config)
+        .map_err(error::CliError::CompilationError)
+        .and_then(|output| {
+          io::stdout().write_all(&output.stdout).unwrap();
+          println!("Done.");
+          Ok(())
+        })?
+    },
+
+    _ => {
+      app.print_help()?
+    }
+  };
+
   Ok(())
 }
 
