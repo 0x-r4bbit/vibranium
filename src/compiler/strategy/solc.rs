@@ -1,4 +1,4 @@
-use super::{Strategy, StrategyConfig};
+use super::{Compile, StrategyConfig};
 use std::process::{Command, Child, Stdio};
 use glob::glob;
 
@@ -16,8 +16,8 @@ impl SolcStrategy {
   }
 }
 
-impl Strategy for SolcStrategy {
-  fn execute(&self) -> Result<Child, std::io::Error> {
+impl Compile for SolcStrategy {
+  fn compile(&self) -> Result<Child, std::io::Error> {
 
     let mut compiler_options = vec![
       "--abi".to_string(),
