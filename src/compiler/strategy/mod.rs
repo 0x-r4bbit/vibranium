@@ -5,8 +5,8 @@ pub mod solc;
 use std::path::{PathBuf};
 use std::process::{Child};
 
-pub trait Strategy {
-  fn execute(&self) -> Result<Child, std::io::Error>;
+pub trait Compile {
+  fn compile(&self) -> Result<Child, std::io::Error>;
 }
 
 pub struct StrategyConfig {
@@ -17,17 +17,17 @@ pub struct StrategyConfig {
 }
 
 pub struct CompilerStrategy<'a> {
-  strategy: Box<Strategy + 'a>,
+  strategy: Box<Compile + 'a>,
 }
 
 impl<'a> CompilerStrategy<'a> {
-  pub fn new(strategy: Box<Strategy + 'a>) -> CompilerStrategy {
+  pub fn new(strategy: Box<Compile + 'a>) -> CompilerStrategy {
     CompilerStrategy {
       strategy
     }
   }
 
   pub fn execute(&self) -> Result<Child, std::io::Error> {
-    self.strategy.execute()
+    self.strategy.compile()
   }
 }
