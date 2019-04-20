@@ -40,6 +40,7 @@ impl<'a> ProjectGenerator<'a> {
           smart_contracts: vec![DEFAULT_CONTRACTS_DIRECTORY.to_string() + "/*.sol"],
         },
         compiler: None,
+        blockchain: None,
       };
 
       info!("Creating: {}", &self.config.config_file.to_str().unwrap());
