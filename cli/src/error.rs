@@ -5,11 +5,14 @@ use std::error::Error;
 use std::fmt;
 
 use vibranium::compiler::error::CompilerError;
+use vibranium::config::error::ConfigError;
+
 
 #[derive(Debug)]
 pub enum CliError {
   CompilationError(CompilerError),
   ConfigurationSetError(toml::ser::Error),
+  ConfigurationDeleteError(ConfigError),
 }
 
 impl Error for CliError {
@@ -32,6 +35,7 @@ OPTIONS can also be specified in the project's vibranium.toml file:
         }
       },
       CliError::ConfigurationSetError(error) => error.description(),
+      CliError::ConfigurationDeleteError(_error) => "Cannot delete config array or object option that isn't empty",
     }
   }
 
@@ -39,6 +43,7 @@ OPTIONS can also be specified in the project's vibranium.toml file:
     match self {
       CliError::CompilationError(error) => Some(error),
       CliError::ConfigurationSetError(error) => Some(error),
+      CliError::ConfigurationDeleteError(error) => Some(error),
     }
   }
 }
@@ -48,6 +53,7 @@ impl fmt::Display for CliError {
     match self {
       CliError::CompilationError(_error) => write!(f, "{}", self.description()),
       CliError::ConfigurationSetError(error) => write!(f, "Couldn't set configuration: {}", error),
+      CliError::ConfigurationDeleteError(_error) => write!(f, "{}", self.description()),
     }
   }
 }

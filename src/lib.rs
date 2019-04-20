@@ -53,6 +53,14 @@ impl Vibranium {
       .and_then(|_| self.config.write(option, value))
   }
 
+  pub fn unset_config(&self, option: String) -> Result<(), config::error::ConfigError> {
+    let generator = project_generator::ProjectGenerator::new(&self.config);
+    generator
+      .check_vibranium_dir_exists()
+      .map_err(|error| config::error::ConfigError::Other(error.to_string()))
+      .and_then(|_| self.config.remove(option))
+  }
+
   pub fn compile(&self, config: compiler::CompilerConfig) -> Result<Output, compiler::error::CompilerError> {
     let compiler = compiler::Compiler::new(&self.config);
     let generator = project_generator::ProjectGenerator::new(&self.config);
