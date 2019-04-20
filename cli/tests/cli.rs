@@ -247,6 +247,34 @@ fn it_should_ignore_config_options_that_do_not_exist() -> Result<(), Box<std::er
 }
 
 #[test]
+fn it_should_remove_config_option() -> Result<(), Box<std::error::Error>> {
+
+  let (tmp_dir, project_path) = setup_vibranium_project(None)?;
+
+  let mut cmd = Command::main_binary()?;
+
+  cmd.arg("config")
+      .arg("compiler.cmd")
+      .arg("foo")
+      .arg("--path")
+      .arg(&project_path);
+  cmd.assert().success();
+
+  let mut cmd = Command::main_binary()?;
+  cmd.arg("config")
+      .arg("--unset")
+      .arg("compiler.cmd")
+      .arg("--path")
+      .arg(&project_path);
+  cmd.assert().success();
+
+  let config = read_config(&project_path)?;
+  assert_eq!(config.compiler.unwrap().cmd, None);
+  tmp_dir.close()?;
+  Ok(())
+}
+
+#[test]
 fn it_should_fail_when_given_compiler_option_is_not_supported_and_no_compiler_options_specificed() -> Result<(), Box<std::error::Error>> {
 
   let (tmp_dir, project_path) = setup_vibranium_project(None)?;
