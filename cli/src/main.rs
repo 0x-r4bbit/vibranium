@@ -19,8 +19,6 @@ use vibranium::compiler::CompilerConfig;
 
 mod error;
 
-const DEFAULT_NODE_CLIENT: &str = "parity";
-
 type Error = Box<std::error::Error>;
 
 fn main() {
@@ -43,6 +41,12 @@ fn run() -> Result<(), Error> {
                       .long("client")
                       .value_name("CLIENT_BINARY")
                       .help("Specifies client used to start local Ethereum node")
+                      .takes_value(true))
+                    .arg(Arg::with_name("path")
+                      .short("p")
+                      .long("path")
+                      .value_name("PATH")
+                      .help("Specifies path to Vibranium project from which to spin up a node")
                       .takes_value(true))
                     .arg(Arg::with_name("client-opts")
                       .value_name("OPTIONS")
@@ -129,18 +133,16 @@ fn run() -> Result<(), Error> {
   match matches.subcommand() {
     ("node", Some(cmd)) => {
       println!("Starting blockchain node...");
-      let vibranium = Vibranium::new(env::current_dir()?);
+      let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
+      let vibranium = Vibranium::new(path);
 
-      let client = cmd.value_of("client").unwrap_or(DEFAULT_NODE_CLIENT);
-      let mut client_options = vec![];
-
-      if let Some(options) = cmd.values_of("client-opts") {
-        client_options = options.collect();
-      }
+      let client_options = cmd.values_of("client-opts").map(|options| {
+        options.map(std::string::ToString::to_string).collect()
+      });
 
       let config = NodeConfig {
-        client: &client,
-        client_options: &client_options,
+        client: cmd.value_of("client").map(std::string::ToString::to_string),
+        client_options,
       };
     
       vibranium.start_node(config)?;

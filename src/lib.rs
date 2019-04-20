@@ -27,10 +27,16 @@ impl Vibranium {
   }
 
   pub fn start_node(&self, config: blockchain::NodeConfig) -> Result<ExitStatus, blockchain::error::NodeError> {
-    let node = blockchain::Node::new(config);
-    node.start()
-        .map(|mut process| process.wait().map_err(blockchain::error::NodeError::Io))
-        .and_then(|status| status)
+    let generator = project_generator::ProjectGenerator::new(&self.config);
+    generator
+      .check_vibranium_dir_exists()
+      .map_err(|error| blockchain::error::NodeError::Other(error.to_string()))
+      .and_then(|_| {
+        let node = blockchain::Node::new(&self.config);
+        node.start(config)
+          .map(|mut process| process.wait().map_err(blockchain::error::NodeError::Io))
+          .and_then(|status| status)
+      })
   }
 
   pub fn init_project(&self) -> Result<(), project_generator::error::ProjectGenerationError> {

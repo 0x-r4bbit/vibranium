@@ -14,11 +14,12 @@ pub const VIBRANIUM_CONFIG_FILE: &str = "vibranium.toml";
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ProjectConfig {
   pub sources: ProjectSourcesConfig,
-  pub compiler: Option<ProjectCompilerConfig>,
+  pub compiler: Option<ProjectCmdExecutionConfig>,
+  pub blockchain: Option<ProjectCmdExecutionConfig>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct ProjectCompilerConfig {
+pub struct ProjectCmdExecutionConfig {
   pub cmd: Option<String>,
   pub options: Option<Vec<String>>
 }
