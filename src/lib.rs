@@ -44,10 +44,10 @@ impl Vibranium {
     generator.generate_project(&self.project_path)
   }
 
-  pub fn reset_project(&self) -> Result<(), project_generator::error::ProjectGenerationError> {
+  pub fn reset_project(&self, reset_options: project_generator::ResetOptions) -> Result<(), project_generator::error::ProjectGenerationError> {
     let generator = project_generator::ProjectGenerator::new(&self.config);
     generator
-      .reset_project(&self.project_path)
+      .reset_project(&self.project_path, reset_options)
       .and_then(|_| generator.generate_project(&self.project_path))
   }
 

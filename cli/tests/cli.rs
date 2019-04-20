@@ -12,6 +12,7 @@ use assert_cmd::prelude::*;
 use predicates::prelude::*;
 use tempfile::{tempdir, TempDir} ;
 use vibranium::config::{ProjectConfig};
+use vibranium::project_generator::default_project_config;
 
 fn setup_vibranium_project(config: Option<ProjectConfig>) -> Result<(TempDir, PathBuf), Box<std::error::Error>> {
   let tmp_dir = tempdir()?;
@@ -38,6 +39,24 @@ fn setup_vibranium_project(config: Option<ProjectConfig>) -> Result<(TempDir, Pa
 fn read_config(project_path: &PathBuf) -> Result<ProjectConfig, Box<std::error::Error>> {
   let project_config = toml::from_str(&fs::read_to_string(&project_path.join("vibranium.toml"))?)?;
   Ok(project_config)
+}
+
+fn set_configurations(configs: Vec<(&str, &str)>, project_path: &PathBuf) -> Result<(), Box<std::error::Error>> {
+  for (config, value) in configs {
+    set_configuration(&config, &value, &project_path)?;
+  }
+  Ok(())
+}
+
+fn set_configuration(config: &str, value: &str, project_path: &PathBuf) -> Result<(), Box<std::error::Error>> {
+  let mut cmd = Command::main_binary()?;
+  cmd.arg("config")
+      .arg(config)
+      .arg(value)
+      .arg("--path")
+      .arg(&project_path);
+  cmd.assert().success();
+  Ok(())
 }
 
 #[test]
@@ -147,15 +166,7 @@ fn it_should_honor_changes_in_vibranium_toml_when_resetting_project() -> Result<
   let (tmp_dir, project_path) = setup_vibranium_project(None)?;
   let updated_artifacts_dir: &str = "test_artifacts";
 
-  let mut cmd = Command::main_binary()?;
-
-  cmd.arg("config")
-      .arg("sources.artifacts")
-      .arg(updated_artifacts_dir.to_string())
-      .arg("--path")
-      .arg(&project_path);
-
-  cmd.assert().success();
+  set_configuration("sources.artifacts", &updated_artifacts_dir, &project_path)?;
 
   let mut cmd = Command::main_binary()?;
   cmd.arg("reset")
@@ -170,19 +181,48 @@ fn it_should_honor_changes_in_vibranium_toml_when_resetting_project() -> Result<
 }
 
 #[test]
-fn it_should_update_vibranium_config_file_via_config_command() -> Result<(), Box<std::error::Error>> {
+fn it_should_restore_config_file_with_defaults_when_resetting_project() -> Result<(), Box<std::error::Error>> {
 
   let (tmp_dir, project_path) = setup_vibranium_project(None)?;
 
-  let mut cmd = Command::main_binary()?;
+  set_configurations(vec![
+    ("sources.artifacts", "something-else"),
+    ("sources.smart_contracts", "[foo, bar]"),
+    ("compiler.cmd", "something-else"),
+    ("blockchain.cmd", "something-else"),
+  ], &project_path)?;
 
-  cmd.arg("config")
-      .arg("sources.artifacts")
-      .arg("foo")
+  let config = read_config(&project_path)?;
+
+  assert_eq!(config.sources.artifacts, "something-else");
+  assert_eq!(config.sources.smart_contracts, vec!["foo", "bar"]);
+  assert_eq!(config.compiler.unwrap().cmd.unwrap(), "something-else");
+  assert_eq!(config.blockchain.unwrap().cmd.unwrap(), "something-else");
+
+  let mut cmd = Command::main_binary()?;
+  cmd.arg("reset")
+      .arg("--restore-config")
       .arg("--path")
       .arg(&project_path);
-
   cmd.assert().success();
+
+  let default_config = default_project_config();
+  let config = read_config(&project_path)?;
+
+  assert_eq!(config.sources.artifacts, default_config.sources.artifacts);
+  assert_eq!(config.sources.smart_contracts, default_config.sources.smart_contracts);
+  assert_eq!(config.compiler.unwrap().cmd, default_config.compiler.unwrap().cmd);
+  assert_eq!(config.blockchain.unwrap().cmd, default_config.blockchain.unwrap().cmd);
+
+  tmp_dir.close()?;
+  Ok(())
+}
+
+#[test]
+fn it_should_update_vibranium_config_file_via_config_command() -> Result<(), Box<std::error::Error>> {
+
+  let (tmp_dir, project_path) = setup_vibranium_project(None)?;
+  set_configuration("sources.artifacts", "foo", &project_path)?;
 
   let config = read_config(&project_path)?;
   assert_eq!(config.sources.artifacts, "foo");
@@ -196,15 +236,7 @@ fn it_accept_multi_value_config_options_using_array_syntax() -> Result<(), Box<s
 
   let (tmp_dir, project_path) = setup_vibranium_project(None)?;
 
-  let mut cmd = Command::main_binary()?;
-
-  cmd.arg("config")
-      .arg("compiler.options")
-      .arg("[--foo, --bar, --bazinga]")
-      .arg("--path")
-      .arg(&project_path);
-
-  cmd.assert().success();
+  set_configuration("compiler.options", "[--foo, --bar, --bazinga]", &project_path)?;
 
   let config = read_config(&project_path)?;
   assert_eq!(config.compiler.unwrap().options.unwrap(), ["--foo", "--bar", "--bazinga"]);
@@ -217,16 +249,7 @@ fn it_accept_multi_value_config_options_using_array_syntax() -> Result<(), Box<s
 fn it_should_remove_empty_values_when_setting_multi_value_options() -> Result<(), Box<std::error::Error>> {
 
   let (tmp_dir, project_path) = setup_vibranium_project(None)?;
-
-  let mut cmd = Command::main_binary()?;
-
-  cmd.arg("config")
-      .arg("compiler.options")
-      .arg("[foo, ]")
-      .arg("--path")
-      .arg(&project_path);
-
-  cmd.assert().success();
+  set_configuration("compiler.options", "[foo, ]", &project_path)?;
 
   let config = read_config(&project_path)?;
   assert_eq!(config.compiler.unwrap().options.unwrap(), ["foo"]);
@@ -258,19 +281,8 @@ fn it_should_fail_when_setting_incompatible_config_value_for_config_option() -> 
 
 #[test]
 fn it_should_ignore_config_options_that_do_not_exist() -> Result<(), Box<std::error::Error>> {
-
   let (tmp_dir, project_path) = setup_vibranium_project(None)?;
-
-  let mut cmd = Command::main_binary()?;
-
-  cmd.arg("config")
-      .arg("unknown")
-      .arg("foo")
-      .arg("--path")
-      .arg(&project_path);
-
-  cmd.assert().success();
-
+  set_configuration("unknown", "foo", &project_path)?;
   tmp_dir.close()?;
   Ok(())
 }
@@ -280,14 +292,7 @@ fn it_should_remove_config_option() -> Result<(), Box<std::error::Error>> {
 
   let (tmp_dir, project_path) = setup_vibranium_project(None)?;
 
-  let mut cmd = Command::main_binary()?;
-
-  cmd.arg("config")
-      .arg("compiler.cmd")
-      .arg("foo")
-      .arg("--path")
-      .arg(&project_path);
-  cmd.assert().success();
+  set_configuration("compiler.cmd", "foo", &project_path)?;
 
   let mut cmd = Command::main_binary()?;
   cmd.arg("config")
@@ -310,14 +315,7 @@ fn it_should_fail_when_given_compiler_option_is_not_supported_and_no_compiler_op
 
   let mut cmd = Command::main_binary()?;
 
-  cmd.arg("config")
-      .arg("compiler.options")
-      .arg("[]")
-      .arg("--path")
-      .arg(&project_path);
-  cmd.assert().success();
-
-  let mut cmd = Command::main_binary()?;
+  set_configuration("compiler.options", "[]", &project_path)?;
 
   cmd.arg("compile")
       .arg("--compiler")
@@ -341,21 +339,10 @@ fn it_should_fail_when_given_compiler_is_not_installed() -> Result<(), Box<std::
   // Vibranium won't even try to execute a compiler that it doesn't support
   // unless a users specifies all the needed options. That's why we overwrite
   // the config to use compiler.options as well as compiler.cmd.
-  let mut cmd = Command::main_binary()?;
-  cmd.arg("config")
-      .arg("compiler.cmd")
-      .arg("unsupported")
-      .arg("--path")
-      .arg(&project_path);
-  cmd.assert().success();
-
-  let mut cmd = Command::main_binary()?;
-  cmd.arg("config")
-      .arg("compiler.options")
-      .arg("[--some-option]")
-      .arg("--path")
-      .arg(&project_path);
-  cmd.assert().success();
+  set_configurations(vec![
+    ("compiler.cmd", "unsupported"),
+    ("compiler.options", "[--some-option]"),
+  ], &project_path)?;
 
   let mut cmd = Command::main_binary()?;
   cmd.arg("compile")
@@ -400,13 +387,7 @@ fn it_should_honor_compiler_options_specified_in_config_file() -> Result<(), Box
 
   // We overwrite the default configuration to set the compiler
   // to `solcjs`. Vibranium uses `solc` as default.
-  let mut cmd = Command::main_binary()?;
-  cmd.arg("config")
-      .arg("compiler.cmd")
-      .arg("solcjs")
-      .arg("--path")
-      .arg(&project_path);
-  cmd.assert().success();
+  set_configuration("compiler.cmd", "solcjs", &project_path)?;
 
   let mut cmd = Command::main_binary()?;
 
@@ -430,13 +411,7 @@ fn it_should_override_config_file_compiler_options_with_cli_options() -> Result<
 
   let (tmp_dir, project_path) = setup_vibranium_project(None)?;
 
-  let mut cmd = Command::main_binary()?;
-  cmd.arg("config")
-      .arg("compiler.cmd")
-      .arg("ignored")
-      .arg("--path")
-      .arg(&project_path);
-  cmd.assert().success();
+  set_configuration("compiler.cmd", "ignored", &project_path)?;
 
   let mut cmd = Command::main_binary()?;
   cmd.arg("compile")

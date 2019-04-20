@@ -16,6 +16,7 @@ use clap::{App, SubCommand, Arg};
 use vibranium::Vibranium;
 use vibranium::blockchain::NodeConfig;
 use vibranium::compiler::CompilerConfig;
+use vibranium::project_generator::ResetOptions;
 
 mod error;
 
@@ -79,6 +80,10 @@ fn run() -> Result<(), Error> {
                       .value_name("PATH")
                       .help("Specifies path to Vibranium project to reset")
                       .takes_value(true))
+                    .arg(Arg::with_name("restore-config")
+                      .short("rc")
+                      .long("restore-config")
+                      .help("Flag to specify whether the project's vibranium.toml file should be reset to Vibranium's defaults"))
                     .arg(Arg::with_name("verbose")
                       .short("v")
                       .long("verbose")
@@ -172,7 +177,10 @@ fn run() -> Result<(), Error> {
       println!("Resetting Vibranium project...");
       let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
       let vibranium = Vibranium::new(path);
-      vibranium.reset_project().and_then(|_| {
+
+      vibranium.reset_project(ResetOptions {
+        restore_config: cmd.is_present("restore-config")
+      }).and_then(|_| {
         println!("Done.");
         Ok(())
       })?

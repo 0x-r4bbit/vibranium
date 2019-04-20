@@ -19,6 +19,10 @@ pub struct ProjectGenerator<'a> {
   config: &'a config::Config,
 }
 
+pub struct ResetOptions {
+  pub restore_config: bool,
+}
+
 impl<'a> ProjectGenerator<'a> {
   pub fn new(config: &config::Config) -> ProjectGenerator {
     ProjectGenerator {
@@ -35,26 +39,7 @@ impl<'a> ProjectGenerator<'a> {
 
     if !self.config.exists() {
       directories_to_create.push(DEFAULT_ARTIFACTS_DIRECTORY.to_string());
-
-      let config = config::ProjectConfig {
-        sources: config::ProjectSourcesConfig {
-          artifacts: DEFAULT_ARTIFACTS_DIRECTORY.to_string(),
-          smart_contracts: vec![DEFAULT_CONTRACTS_DIRECTORY.to_string() + "/*.sol"],
-        },
-        compiler: Some(config::ProjectCmdExecutionConfig {
-          cmd: Some(compiler::support::SupportedCompilers::Solc.to_string()),
-          options: Some(compiler::strategy::solc::default_options())
-        }),
-        blockchain: Some(config::ProjectCmdExecutionConfig {
-          cmd: Some(blockchain::support::SupportedBlockchainClients::Parity.to_string()),
-          options: Some(blockchain::default_options())
-        }),
-      };
-
-      info!("Creating: {}", &self.config.config_file.to_str().unwrap());
-      let config_toml = toml::to_string(&config).map_err(error::ProjectGenerationError::Serialization)?;
-      let mut config_file = fs::File::create(&self.config.config_file).map_err(error::ProjectGenerationError::Io)?;
-      config_file.write_all(config_toml.as_bytes()).map_err(error::ProjectGenerationError::Io)?;
+      self.create_default_config_file()?;
     } else {
       let existing_config = self.config.read().map_err(error::ProjectGenerationError::InvalidConfig)?;
       directories_to_create.push(existing_config.sources.artifacts);
@@ -70,10 +55,15 @@ impl<'a> ProjectGenerator<'a> {
     Ok(())
   }
 
-  pub fn reset_project(&self, project_path: &PathBuf) -> Result<(), error::ProjectGenerationError> {
+  pub fn reset_project(&self, project_path: &PathBuf, options: ResetOptions) -> Result<(), error::ProjectGenerationError> {
     self.check_vibranium_dir_exists()?;
     let vibranium_project_directory = project_path.join(VIBRANIUM_PROJECT_DIRECTORY);
     let default_artifacts_directory = project_path.join(DEFAULT_ARTIFACTS_DIRECTORY);
+
+    if options.restore_config {
+      info!("Restoring project's config file");
+      self.create_default_config_file()?;
+    }
 
     if self.config.exists() {
       let existing_config = self.config.read().map_err(error::ProjectGenerationError::InvalidConfig)?;
@@ -99,5 +89,31 @@ impl<'a> ProjectGenerator<'a> {
       return Err(error::ProjectGenerationError::VibraniumDirectoryNotFound);
     }
     Ok(())
+  }
+
+  fn create_default_config_file(&self) -> Result<(), error::ProjectGenerationError> {
+    let config = default_project_config();
+    info!("Creating: {}", &self.config.config_file.to_str().unwrap());
+    let config_toml = toml::to_string(&config).map_err(error::ProjectGenerationError::Serialization)?;
+    let mut config_file = fs::File::create(&self.config.config_file).map_err(error::ProjectGenerationError::Io)?;
+    config_file.write_all(config_toml.as_bytes()).map_err(error::ProjectGenerationError::Io)?;
+    Ok(())
+  }
+}
+
+pub fn default_project_config() -> config::ProjectConfig {
+  config::ProjectConfig {
+    sources: config::ProjectSourcesConfig {
+      artifacts: DEFAULT_ARTIFACTS_DIRECTORY.to_string(),
+      smart_contracts: vec![DEFAULT_CONTRACTS_DIRECTORY.to_string() + "/*.sol"],
+    },
+    compiler: Some(config::ProjectCmdExecutionConfig {
+      cmd: Some(compiler::support::SupportedCompilers::Solc.to_string()),
+      options: Some(compiler::strategy::solc::default_options())
+    }),
+    blockchain: Some(config::ProjectCmdExecutionConfig {
+      cmd: Some(blockchain::support::SupportedBlockchainClients::Parity.to_string()),
+      options: Some(blockchain::default_options())
+    }),
   }
 }
