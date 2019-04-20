@@ -19,12 +19,7 @@ impl SolcStrategy {
 impl Compile for SolcStrategy {
   fn compile(&self) -> Result<Child, std::io::Error> {
 
-    let mut compiler_options = vec![
-      "--abi".to_string(),
-      "--metadata".to_string(),
-      "--userdoc".to_string(),
-      "--overwrite".to_string()
-    ];
+    let mut compiler_options = default_options();
 
     if let Some(options) = &self.config.compiler_options {
       compiler_options.append(&mut options.clone());
@@ -53,3 +48,11 @@ impl Compile for SolcStrategy {
   }
 }
 
+pub fn default_options() -> Vec<String> {
+  vec![
+    "--abi".to_string(),
+    "--metadata".to_string(),
+    "--userdoc".to_string(),
+    "--overwrite".to_string()
+  ]
+}

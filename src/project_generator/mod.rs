@@ -5,6 +5,8 @@ use std::path::{PathBuf};
 use std::fs;
 use std::io::Write;
 
+use crate::blockchain;
+use crate::compiler;
 use crate::config;
 
 pub mod error;
@@ -39,8 +41,14 @@ impl<'a> ProjectGenerator<'a> {
           artifacts: DEFAULT_ARTIFACTS_DIRECTORY.to_string(),
           smart_contracts: vec![DEFAULT_CONTRACTS_DIRECTORY.to_string() + "/*.sol"],
         },
-        compiler: None,
-        blockchain: None,
+        compiler: Some(config::ProjectCmdExecutionConfig {
+          cmd: Some(compiler::support::SupportedCompilers::Solc.to_string()),
+          options: Some(compiler::strategy::solc::default_options())
+        }),
+        blockchain: Some(config::ProjectCmdExecutionConfig {
+          cmd: Some(blockchain::support::SupportedBlockchainClients::Parity.to_string()),
+          options: Some(blockchain::default_options())
+        }),
       };
 
       info!("Creating: {}", &self.config.config_file.to_str().unwrap());

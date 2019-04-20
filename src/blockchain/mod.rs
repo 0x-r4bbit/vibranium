@@ -36,8 +36,8 @@ impl<'a> Node<'a> {
       Some(options) => options.to_vec(),
       None => {
         match project_config.blockchain {
-          Some(config) => config.options.unwrap_or(vec![]),
-          None => vec![]
+          Some(config) => config.options.unwrap_or(default_options()),
+          None => default_options()
         }
       }
     };
@@ -51,5 +51,6 @@ impl<'a> Node<'a> {
   }
 }
 
-
-
+pub fn default_options() -> Vec<String> {
+  vec!["--config".to_string(), "dev".to_string()]
+}

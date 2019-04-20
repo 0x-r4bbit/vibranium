@@ -66,6 +66,35 @@ fn it_should_initialize_project() -> Result<(), Box<std::error::Error>> {
 }
 
 #[test]
+fn it_should_initialize_project_with_default_config_preset() -> Result<(), Box<std::error::Error>> {
+
+  let (tmp_dir, project_path) = setup_vibranium_project(None)?;
+
+  let config = read_config(&project_path)?;
+  assert_eq!(config.sources.artifacts, "artifacts");
+  assert_eq!(config.sources.smart_contracts, vec!["contracts/*.sol"]);
+
+  let compiler_config = config.compiler.unwrap();
+  let compiler_options = compiler_config.options.unwrap();
+
+  assert_eq!(&compiler_config.cmd.unwrap(), "solc");
+  assert_eq!(&compiler_options[0], "--abi");
+  assert_eq!(&compiler_options[1], "--metadata");
+  assert_eq!(&compiler_options[2], "--userdoc");
+  assert_eq!(&compiler_options[3], "--overwrite");
+
+  let blockchain_config = config.blockchain.unwrap();
+  let blockchain_options = blockchain_config.options.unwrap();
+
+  assert_eq!(&blockchain_config.cmd.unwrap(), "parity");
+  assert_eq!(&blockchain_options[0], "--config");
+  assert_eq!(&blockchain_options[1], "dev");
+
+  tmp_dir.close()?;
+  Ok(())
+}
+
+#[test]
 fn it_should_fail_on_reset_if_project_is_not_a_vibranium_project() -> Result<(), Box<std::error::Error>> {
   let tmp_dir = tempdir()?;
 
@@ -278,6 +307,15 @@ fn it_should_remove_config_option() -> Result<(), Box<std::error::Error>> {
 fn it_should_fail_when_given_compiler_option_is_not_supported_and_no_compiler_options_specificed() -> Result<(), Box<std::error::Error>> {
 
   let (tmp_dir, project_path) = setup_vibranium_project(None)?;
+
+  let mut cmd = Command::main_binary()?;
+
+  cmd.arg("config")
+      .arg("compiler.options")
+      .arg("[]")
+      .arg("--path")
+      .arg(&project_path);
+  cmd.assert().success();
 
   let mut cmd = Command::main_binary()?;
 

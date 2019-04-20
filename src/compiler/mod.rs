@@ -1,6 +1,6 @@
 pub mod error;
-mod strategy;
-mod support;
+pub mod strategy;
+pub mod support;
 
 use std::process::{Child};
 use std::path::{PathBuf};
@@ -60,10 +60,15 @@ impl<'a> Compiler<'a> {
       Ok(SupportedCompilers::Solc) => CompilerStrategy::new(Box::new(SolcStrategy::new(strategy_config))),
       Ok(SupportedCompilers::SolcJs) => CompilerStrategy::new(Box::new(SolcJsStrategy::new(strategy_config))),
       Err(err) => {
-        if compiler_options.is_none() {
-          return Err(err)
+        match compiler_options {
+          Some(options) => {
+            if options.is_empty() {
+              return Err(err)?
+            }
+            CompilerStrategy::new(Box::new(DefaultStrategy::new(compiler.to_owned(), options)))
+          },
+          None => Err(err)?
         }
-        CompilerStrategy::new(Box::new(DefaultStrategy::new(compiler.to_owned(), compiler_options.unwrap())))
       },
     };
 
