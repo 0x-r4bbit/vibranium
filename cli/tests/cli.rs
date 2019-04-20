@@ -185,6 +185,28 @@ fn it_accept_multi_value_config_options_using_array_syntax() -> Result<(), Box<s
 }
 
 #[test]
+fn it_should_remove_empty_values_when_setting_multi_value_options() -> Result<(), Box<std::error::Error>> {
+
+  let (tmp_dir, project_path) = setup_vibranium_project(None)?;
+
+  let mut cmd = Command::main_binary()?;
+
+  cmd.arg("config")
+      .arg("compiler.options")
+      .arg("[foo, ]")
+      .arg("--path")
+      .arg(&project_path);
+
+  cmd.assert().success();
+
+  let config = read_config(&project_path)?;
+  assert_eq!(config.compiler.unwrap().options.unwrap(), ["foo"]);
+
+  tmp_dir.close()?;
+  Ok(())
+}
+
+#[test]
 fn it_should_fail_when_setting_incompatible_config_value_for_config_option() -> Result<(), Box<std::error::Error>> {
 
   let (tmp_dir, project_path) = setup_vibranium_project(None)?;
