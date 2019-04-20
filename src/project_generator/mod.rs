@@ -113,7 +113,7 @@ pub fn default_project_config() -> config::ProjectConfig {
     }),
     blockchain: Some(config::ProjectCmdExecutionConfig {
       cmd: Some(blockchain::support::SupportedBlockchainClients::Parity.to_string()),
-      options: Some(blockchain::default_options())
+      options: Some(blockchain::support::default_options_for(blockchain::support::SupportedBlockchainClients::Parity))
     }),
   }
 }
