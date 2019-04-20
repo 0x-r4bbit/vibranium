@@ -182,6 +182,7 @@ fn run() -> Result<(), Error> {
           let values: Vec<String> = value_arg.split(',')
             .map(str::trim)
             .map(std::string::ToString::to_string)
+            .filter(|val| !std::string::String::is_empty(val))
             .collect();
 
           toml::value::Value::try_from(values)
