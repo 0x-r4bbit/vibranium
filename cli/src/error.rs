@@ -6,6 +6,7 @@ use std::fmt;
 
 use vibranium::compiler::error::CompilerError;
 use vibranium::config::error::ConfigError;
+use vibranium::blockchain::error::NodeError;
 
 
 #[derive(Debug)]
@@ -13,6 +14,7 @@ pub enum CliError {
   CompilationError(CompilerError),
   ConfigurationSetError(toml::ser::Error),
   ConfigurationDeleteError(ConfigError),
+  BlockchainError(NodeError),
 }
 
 impl Error for CliError {
@@ -36,6 +38,21 @@ OPTIONS can also be specified in the project's vibranium.toml file:
       },
       CliError::ConfigurationSetError(error) => error.description(),
       CliError::ConfigurationDeleteError(_error) => "Cannot delete config array or object option that isn't empty",
+      CliError::BlockchainError(error) => {
+        match error {
+          NodeError::UnsupportedClient => r###"No built-in support for requested blockchain client.
+To use this client, please specify necessary OPTIONS in the node command. E.g:
+
+  vibranium node --client trinity -- <OPTIONS>...
+
+OPTIONS can also be specified in the project's vibranium.toml file:
+
+  [blockchain]
+    options = ["--option1", "--option2"]
+"###,
+          _ => error.description()
+        }
+      }
     }
   }
 
@@ -44,6 +61,7 @@ OPTIONS can also be specified in the project's vibranium.toml file:
       CliError::CompilationError(error) => Some(error),
       CliError::ConfigurationSetError(error) => Some(error),
       CliError::ConfigurationDeleteError(error) => Some(error),
+      CliError::BlockchainError(error) => Some(error),
     }
   }
 }
@@ -54,6 +72,7 @@ impl fmt::Display for CliError {
       CliError::CompilationError(_error) => write!(f, "{}", self.description()),
       CliError::ConfigurationSetError(error) => write!(f, "Couldn't set configuration: {}", error),
       CliError::ConfigurationDeleteError(_error) => write!(f, "{}", self.description()),
+      CliError::BlockchainError(_error) => write!(f, "{}", self.description()),
     }
   }
 }

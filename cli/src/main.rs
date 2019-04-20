@@ -159,7 +159,7 @@ fn run() -> Result<(), Error> {
         client_options,
       };
     
-      vibranium.start_node(config)?;
+      vibranium.start_node(config).map_err(error::CliError::BlockchainError)?;
     },
 
     ("init", Some(cmd)) => {
