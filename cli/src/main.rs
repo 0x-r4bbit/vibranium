@@ -96,6 +96,15 @@ fn run() -> Result<(), Error> {
                       .number_of_values(2)
                       .value_names(&["CONFIG_OPTION", "VALUE"])
                       .takes_value(true))
+                    .arg(Arg::with_name("unset")
+                      .short("u")
+                      .long("unset")
+                      .value_name("CONFIG_OPTION")
+                      .takes_value(true))
+                    .arg(Arg::with_name("verbose")
+                      .short("v")
+                      .long("verbose")
+                      .help("Generates verbose output"))
                   )
                   .subcommand(SubCommand::with_name("compile")
                     .about("Compiles Smart Contracts from Vibranium project")
@@ -195,6 +204,10 @@ fn run() -> Result<(), Error> {
         };
 
         vibranium.set_config(config_option, value)?
+      }
+
+      if let Some(config_option) = cmd.value_of("unset") {
+        vibranium.unset_config(config_option.to_string()).map_err(error::CliError::ConfigurationDeleteError)?
       }
     },
 
