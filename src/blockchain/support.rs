@@ -30,7 +30,7 @@ impl ToString for SupportedBlockchainClients {
   }
 }
 
-pub fn default_options_for(client: SupportedBlockchainClients) -> Vec<String> {
+pub fn default_options_from(client: SupportedBlockchainClients) -> Vec<String> {
   match client {
     SupportedBlockchainClients::Parity => {
       vec!["--config".to_string(), "dev".to_string()]
