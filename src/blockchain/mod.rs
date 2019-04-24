@@ -1,7 +1,8 @@
-extern crate log;
-
 use std::process::{Command, Child};
+
 use crate::config;
+use crate::utils;
+
 use support::SupportedBlockchainClients;
 
 pub mod error;
@@ -36,21 +37,21 @@ impl<'a> Node<'a> {
     let client_options: Vec<String> = match &config.client_options {
       Some(options) => {
         match client.parse() {
-          Ok(SupportedBlockchainClients::Parity) => merge_defaults_with_options_for(SupportedBlockchainClients::Parity, options.to_vec()),
-          Ok(SupportedBlockchainClients::Geth) => merge_defaults_with_options_for(SupportedBlockchainClients::Geth, options.to_vec()),
+          Ok(SupportedBlockchainClients::Parity) => utils::merge_cli_options(
+            support::default_options_from(SupportedBlockchainClients::Parity),
+            options.to_vec()
+          ),
+          Ok(SupportedBlockchainClients::Geth) => utils::merge_cli_options(
+            support::default_options_from(SupportedBlockchainClients::Geth),
+            options.to_vec()
+          ),
           Err(_err) => options.to_vec(),
         }
       }
       None => {
         match project_config.blockchain {
-          Some(config) => config.options.unwrap_or_else(|| {
-            match client.parse() {
-              Ok(SupportedBlockchainClients::Parity) => support::default_options_for(SupportedBlockchainClients::Parity),
-              Ok(SupportedBlockchainClients::Geth) => support::default_options_for(SupportedBlockchainClients::Geth),
-              Err(_err) => vec![],
-            }
-          }),
-          None => support::default_options_for(SupportedBlockchainClients::Parity)
+          Some(config) => config.options.unwrap_or_else(|| try_default_options_from(&client)),
+          None => try_default_options_from(&client)
         }
       }
     };
@@ -70,10 +71,11 @@ impl<'a> Node<'a> {
   }
 }
 
-fn merge_defaults_with_options_for(client: SupportedBlockchainClients, options: Vec<String>) -> Vec<String> {
-  let mut combined = support::default_options_for(client);
-  combined.append(&mut options.clone());
-  combined.sort();
-  combined.dedup();
-  combined
+
+fn try_default_options_from(client: &str) -> Vec<String> {
+  match client.parse() {
+    Ok(SupportedBlockchainClients::Parity) => support::default_options_from(SupportedBlockchainClients::Parity),
+    Ok(SupportedBlockchainClients::Geth) => support::default_options_from(SupportedBlockchainClients::Geth),
+    Err(_err) => vec![],
+  }
 }

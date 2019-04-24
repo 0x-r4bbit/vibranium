@@ -52,6 +52,8 @@ jobs:
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
       - script: cargo build --all
         displayName: Cargo build
+      - script: cargo test --all
+        displayName: Cargo test vibranium
       - script: cd cli && cargo test --all
-        displayName: Cargo test
+        displayName: Cargo test vibranium-cli
 
