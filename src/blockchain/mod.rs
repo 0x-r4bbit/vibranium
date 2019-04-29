@@ -7,6 +7,7 @@ use support::SupportedBlockchainClients;
 
 pub mod error;
 pub mod support;
+pub mod connector;
 
 pub struct NodeConfig {
   pub client: Option<String>,

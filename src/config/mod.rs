@@ -2,6 +2,8 @@ extern crate toml;
 extern crate toml_query;
 pub mod error;
 
+use crate::blockchain;
+
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
@@ -9,6 +11,7 @@ use toml_query::set::TomlValueSetExt;
 use toml_query::delete::TomlValueDeleteExt;
 use toml_query::insert::TomlValueInsertExt;
 use toml_query::error::Error::IdentifierNotFoundInDocument;
+use blockchain::connector::BlockchainConnectorConfig;
 
 pub const VIBRANIUM_CONFIG_FILE: &str = "vibranium.toml";
 
@@ -16,13 +19,20 @@ pub const VIBRANIUM_CONFIG_FILE: &str = "vibranium.toml";
 pub struct ProjectConfig {
   pub sources: ProjectSourcesConfig,
   pub compiler: Option<ProjectCmdExecutionConfig>,
-  pub blockchain: Option<ProjectCmdExecutionConfig>,
+  pub blockchain: Option<ProjectBlockchainConfig>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ProjectCmdExecutionConfig {
   pub cmd: Option<String>,
   pub options: Option<Vec<String>>
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ProjectBlockchainConfig {
+  pub cmd: Option<String>,
+  pub options: Option<Vec<String>>,
+  pub connector: Option<BlockchainConnectorConfig>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
