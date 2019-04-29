@@ -5,9 +5,12 @@ authors = ["Pascal Precht <pascal.precht@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+jsonrpc-core = "8.0.0"
 toml = "0.4.10"
 toml-query = "0.8.0"
 serde = "1.0"
 serde_derive = "1.0"
+serde_json = "1.0"
 log = "0.4.6"
 glob = "0.3"
+web3 = "0.6.0"

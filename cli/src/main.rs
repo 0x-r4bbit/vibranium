@@ -134,6 +134,15 @@ fn run() -> Result<(), Error> {
                       .short("v")
                       .long("verbose")
                       .help("Generates verbose output"))
+                  )
+                  .subcommand(SubCommand::with_name("accounts")
+                    .about("Outputs available wallet accounts")
+                    .arg(Arg::with_name("path")
+                      .short("p")
+                      .long("path")
+                      .value_name("PATH")
+                      .help("Specifies path to Vibranium project")
+                      .takes_value(true))
                   );
 
   let matches = app.clone().get_matches();
@@ -241,6 +250,18 @@ fn run() -> Result<(), Error> {
           println!("Done.");
           Ok(())
         })?
+    },
+
+    ("accounts", Some(cmd)) => {
+      let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
+      let vibranium = Vibranium::new(path);
+
+      let (_eloop, connector) = vibranium.get_blockchain_connector().map_err(error::CliError::BlockchainConnectorError)?;
+      let accounts = connector.accounts().map_err(error::CliError::BlockchainConnectorError)?;
+
+      for (i, address) in accounts.iter().enumerate() {
+        println!("({}) {:?}", i, address);
+      }
     },
 
     _ => {

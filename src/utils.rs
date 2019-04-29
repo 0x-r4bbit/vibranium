@@ -1,3 +1,6 @@
+const LOCALHOST_ADDRESS: &str = "127.0.0.1";
+const LOCALHOST_ALIAS: &str = "localhost";
+
 pub fn merge_cli_options(a: Vec<String>, b: Vec<String>) -> Vec<String> {
 
   let mut merged = vec![];
@@ -32,6 +35,13 @@ pub fn merge_cli_options(a: Vec<String>, b: Vec<String>) -> Vec<String> {
   }
 
   merged
+}
+
+pub fn normalize_localhost(host: String) -> String {
+  match host.as_ref() {
+    LOCALHOST_ADDRESS | LOCALHOST_ALIAS => LOCALHOST_ADDRESS.to_owned(),
+    _ => host
+  }
 }
 
 #[cfg(test)]

@@ -33,3 +33,33 @@ impl fmt::Display for NodeError {
     }
   }
 }
+
+#[derive(Debug)]
+pub enum ConnectionError {
+  UnsupportedProtocol,
+  MissingConnectorConfig,
+  Transport(web3::Error),
+  Other(String),
+}
+
+impl Error for ConnectionError {
+  fn description(&self) -> &str {
+    match self {
+      ConnectionError::UnsupportedProtocol => "Couldn't create blockchain connector. The configured protocol is not supported",
+      ConnectionError::MissingConnectorConfig => "Couldn't find configuration for blockchain connector in project configuration.",
+      ConnectionError::Transport(error) => error.description(),
+      ConnectionError::Other(message) => message,
+    }
+  }
+}
+
+impl fmt::Display for ConnectionError {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      ConnectionError::UnsupportedProtocol => write!(f, "{}", self.description()),
+      ConnectionError::MissingConnectorConfig => write!(f, "{}", self.description()),
+      ConnectionError::Transport(_error) => write!(f, "{}", self.description()),
+      ConnectionError::Other(_message) => write!(f, "{}", self.description()),
+    }
+  }
+}

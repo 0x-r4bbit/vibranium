@@ -7,6 +7,7 @@ use std::fmt;
 use vibranium::compiler::error::CompilerError;
 use vibranium::config::error::ConfigError;
 use vibranium::blockchain::error::NodeError;
+use vibranium::blockchain::error::ConnectionError;
 
 
 #[derive(Debug)]
@@ -15,6 +16,7 @@ pub enum CliError {
   ConfigurationSetError(toml::ser::Error),
   ConfigurationDeleteError(ConfigError),
   BlockchainError(NodeError),
+  BlockchainConnectorError(ConnectionError),
 }
 
 impl Error for CliError {
@@ -52,7 +54,39 @@ OPTIONS can also be specified in the project's vibranium.toml file:
 "###,
           _ => error.description()
         }
-      }
+      },
+      CliError::BlockchainConnectorError(error) => {
+        match error {
+          ConnectionError::MissingConnectorConfig => r###"Unable to connect to blockchain. Couldn't find blockchain connector configuration in project configuration.
+Make sure a blockchain connector configuration is provided in the project's vibranium.toml file. E.g:
+
+  [blockchain.connector]
+    protocol = "ws"
+    port = "8546"
+    host = "127.0.0.1"
+"###,
+          ConnectionError::Transport(error) => {
+            // Unfortunately, the underlying web3::Error doesn't properly
+            // expose its error kinds, so we have to rely on string parsing
+            // to transform them to meaningful error messages.
+            let error_message = error.0.to_string();
+
+            if error_message.contains("Connection refused") {
+              "Unable to connect to blockchain. If you're trying to connect to a local blockchain node,
+make sure it's started first using the following command in a separate process:
+
+  $ vibranium node [--path ...]
+"
+            } else if error_message.contains("invalid response") || error_message.contains("405 Method Not Allowed") {
+              "Unexpected blockchain client response. This is because of either a bad reponse from the blockchain client,
+or a wrong configuration of the blockchain connector (e.g. wrong port)"
+            } else {
+              error.0.description()
+            }
+          },
+          _ => error.description()
+        }
+      },
     }
   }
 
@@ -62,6 +96,7 @@ OPTIONS can also be specified in the project's vibranium.toml file:
       CliError::ConfigurationSetError(error) => Some(error),
       CliError::ConfigurationDeleteError(error) => Some(error),
       CliError::BlockchainError(error) => Some(error),
+      CliError::BlockchainConnectorError(error) => Some(error),
     }
   }
 }
@@ -73,6 +108,7 @@ impl fmt::Display for CliError {
       CliError::ConfigurationSetError(error) => write!(f, "Couldn't set configuration: {}", error),
       CliError::ConfigurationDeleteError(_error) => write!(f, "{}", self.description()),
       CliError::BlockchainError(_error) => write!(f, "{}", self.description()),
+      CliError::BlockchainConnectorError(_error) => write!(f, "{}", self.description()),
     }
   }
 }

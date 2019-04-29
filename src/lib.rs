@@ -1,3 +1,10 @@
+#[macro_use]
+extern crate serde_derive;
+#[macro_use]
+extern crate log;
+extern crate glob;
+extern crate web3;
+
 pub mod blockchain;
 pub mod project_generator;
 pub mod compiler;
@@ -6,12 +13,7 @@ mod utils;
 
 use std::process::{ExitStatus, Output};
 use std::path::PathBuf;
-
-#[macro_use]
-extern crate serde_derive;
-#[macro_use]
-extern crate log;
-extern crate glob;
+use blockchain::connector as connector;
 
 #[derive(Debug)]
 pub struct Vibranium {
@@ -87,6 +89,22 @@ impl Vibranium {
         } else {
           Ok(output)
         }
+      })
+  }
+
+  pub fn get_blockchain_connector(&self) -> Result<(web3::transports::EventLoopHandle, connector::BlockchainConnector), blockchain::error::ConnectionError> {
+    let generator = project_generator::ProjectGenerator::new(&self.config);
+
+    generator
+      .check_vibranium_dir_exists()
+      .map_err(|err| blockchain::error::ConnectionError::Other(err.to_string()))
+      .and_then(|_| {
+        let project_config = self.config.read().map_err(|err| blockchain::error::ConnectionError::Other(err.to_string()))?;
+        let blockchain_config = project_config.blockchain.ok_or(blockchain::error::ConnectionError::MissingConnectorConfig)?;
+        let connector_config = blockchain_config.connector.ok_or(blockchain::error::ConnectionError::MissingConnectorConfig)?;
+        let (eloop, adapter) = connector::web3_adapter::Web3Adapter::new(connector_config)?;
+        let blockchain_connector = connector::BlockchainConnector::new(adapter);
+        Ok((eloop, blockchain_connector))
       })
   }
 }
