@@ -12,12 +12,12 @@ jobs:
   - job: 'Test'
     strategy:
       matrix:
-        #windows-stable:
-          #imageName: 'vs2017-win2016'
-          #rustup_toolchain: stable
-        #windows-beta:
-          #imageName: 'vs2017-win2016'
-          #rustup_toolchain: beta
+        windows-stable:
+          imageName: 'vs2017-win2016'
+          rustup_toolchain: stable
+        windows-beta:
+          imageName: 'vs2017-win2016'
+          rustup_toolchain: beta
         mac-stable:
           imageName: 'macos-10.13'
           rustup_toolchain: stable
@@ -56,4 +56,3 @@ jobs:
         displayName: Cargo test vibranium
       - script: cd cli && cargo test --all
         displayName: Cargo test vibranium-cli
-
