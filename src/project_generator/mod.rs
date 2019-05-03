@@ -109,7 +109,7 @@ pub fn default_project_config() -> config::ProjectConfig {
     },
     compiler: Some(config::ProjectCmdExecutionConfig {
       cmd: Some(compiler::support::SupportedCompilers::Solc.to_string()),
-      options: Some(compiler::strategy::solc::default_options())
+      options: Some(compiler::support::default_options_from(compiler::support::SupportedCompilers::Solc))
     }),
     blockchain: Some(config::ProjectBlockchainConfig {
       cmd: Some(blockchain::support::SupportedBlockchainClients::Parity.to_string()),
