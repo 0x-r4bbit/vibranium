@@ -16,17 +16,24 @@ pub enum CompilerError {
 
 impl Error for CompilerError {
   fn description(&self) -> &str {
+    let executable_not_found_message = "Couldn't find executable for requested compiler";
     match self {
       CompilerError::Io(error) => {
         match error.kind() {
-          io::ErrorKind::NotFound => "Couldn't find executable for requested compiler",
+          io::ErrorKind::NotFound => executable_not_found_message,
           _ => error.description(),
         }
       },
       CompilerError::VibraniumDirectoryNotFound(error) => error.description(),
       CompilerError::InvalidConfig(error) => error.description(),
       CompilerError::UnsupportedStrategy => "Couldn't compile project without `CompilerConfig::compiler_options`. No built-in support for requested compiler.",
-      CompilerError::Other(message) => message,
+      CompilerError::Other(message) => {
+        if message.contains("not found") || message.contains("not recognized") {
+          executable_not_found_message
+        } else {
+          message
+        }
+      },
     }
   }
 

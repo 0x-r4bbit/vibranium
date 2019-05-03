@@ -1,15 +1,11 @@
 pub mod error;
-pub mod strategy;
 pub mod support;
 
-use std::process::{Child};
-use std::path::{PathBuf};
+use std::process::{Child, Command, Stdio};
 use crate::config;
-use strategy::{CompilerStrategy, StrategyConfig};
-use strategy::solc::SolcStrategy;
-use strategy::solcjs::SolcJsStrategy;
-use strategy::default::DefaultStrategy;
+use crate::utils;
 use support::SupportedCompilers;
+use glob::glob;
 
 #[derive(Debug)]
 pub struct CompilerConfig {
@@ -39,39 +35,68 @@ impl<'a> Compiler<'a> {
       }
     });
 
-    let compiler_options = match &config.compiler_options {
-      Some(options) => Some(options.to_vec()),
+    let mut compiler_options = match &config.compiler_options {
+      Some(options) => {
+        match compiler.parse() {
+          Ok(SupportedCompilers::Solc) => utils::merge_cli_options(
+            support::default_options_from(SupportedCompilers::Solc),
+            options.to_vec()
+          ),
+          Ok(SupportedCompilers::SolcJs) => utils::merge_cli_options(
+            support::default_options_from(SupportedCompilers::SolcJs),
+            options.to_vec()
+          ),
+          Err(_err) => options.to_vec(),
+        }
+      }
       None => {
         match project_config.compiler {
-          Some(config) => config.options,
-          None => None
+          Some(config) => config.options.unwrap_or_else(|| try_default_options_from(&compiler)),
+          None => try_default_options_from(&compiler)
         }
       }
     };
 
-    let strategy_config = StrategyConfig {
-      input_path: PathBuf::from(&self.config.project_path),
-      output_path: artifacts_dir,
-      smart_contract_sources: project_config.sources.smart_contracts,
-      compiler_options: compiler_options.clone()
+    if compiler_options.is_empty() {
+      if let Err(err) = compiler.parse::<SupportedCompilers>() {
+        Err(err)?
+      }
+    }
+
+    compiler_options.push(artifacts_dir.to_string_lossy().to_string());
+
+    for pattern in &project_config.sources.smart_contracts {
+      let mut full_pattern = self.config.project_path.clone();
+      full_pattern.push(&pattern);
+      for entry in glob(&full_pattern.to_str().unwrap()).unwrap().filter_map(Result::ok) {
+        compiler_options.push(entry.to_string_lossy().to_string());
+      }
+    }
+
+    compiler_options.insert(0, compiler.to_string());
+
+    let (shell, shell_opt) = if cfg!(target_os = "windows") {
+      ("cmd", "/C")
+    } else {
+      ("sh", "-c")
     };
 
-    let compiler_strategy = match compiler.parse() {
-      Ok(SupportedCompilers::Solc) => CompilerStrategy::new(Box::new(SolcStrategy::new(strategy_config))),
-      Ok(SupportedCompilers::SolcJs) => CompilerStrategy::new(Box::new(SolcJsStrategy::new(strategy_config))),
-      Err(err) => {
-        match compiler_options {
-          Some(options) => {
-            if options.is_empty() {
-              return Err(err)?
-            }
-            CompilerStrategy::new(Box::new(DefaultStrategy::new(compiler.to_owned(), options)))
-          },
-          None => Err(err)?
-        }
-      },
-    };
+    info!("Compiling project using command: {} {} {}", &shell, &shell_opt, compiler_options.join(" "));
 
-    compiler_strategy.execute().map_err(error::CompilerError::Io)
+    Command::new(shell)
+      .arg(shell_opt)
+      .arg(&compiler_options.join(" "))
+      .stdout(Stdio::piped())
+      .stderr(Stdio::piped())
+      .spawn()
+      .map_err(error::CompilerError::Io)
+  }
+}
+
+fn try_default_options_from(compiler: &str) -> Vec<String> {
+  match compiler.parse() {
+    Ok(SupportedCompilers::Solc) => support::default_options_from(SupportedCompilers::Solc),
+    Ok(SupportedCompilers::SolcJs) => support::default_options_from(SupportedCompilers::SolcJs),
+    Err(_err) => vec![],
   }
 }

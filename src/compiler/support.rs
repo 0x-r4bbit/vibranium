@@ -1,10 +1,10 @@
 use super::error;
-use super::strategy;
 
 use std::str::FromStr;
 use std::string::ToString;
-use strategy::solc::SOLC_COMPILER_BINARY;
-use strategy::solcjs::SOLC_JS_COMPILER_BINARY;
+
+const SOLC_COMPILER_BINARY: &str = "solc";
+const SOLC_JS_COMPILER_BINARY: &str = "solcjs";
 
 pub enum SupportedCompilers {
   Solc,
@@ -31,4 +31,22 @@ impl ToString for SupportedCompilers {
   }
 }
 
-
+pub fn default_options_from(compiler: SupportedCompilers) -> Vec<String> {
+  match compiler {
+    SupportedCompilers::Solc => {
+      vec![
+        "--abi".to_string(),
+        "--metadata".to_string(),
+        "--userdoc".to_string(),
+        "--overwrite".to_string(),
+        "-o".to_string()
+      ]
+    },
+    SupportedCompilers::SolcJs => {
+      vec![
+        "--abi".to_string(),
+        "-o".to_string()
+      ]
+    },
+  }
+}
