@@ -20,10 +20,8 @@ pub fn merge_cli_options(a: Vec<String>, b: Vec<String>) -> Vec<String> {
             merged.push(b_next.to_owned());
           }
         }
-      } else {
-        if !next.starts_with("--") {
-          merged.push(next.to_owned())
-        }
+      } else if !next.starts_with("--") {
+        merged.push(next.to_owned())
       }
     }
   }
