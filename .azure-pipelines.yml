@@ -1,3 +1,5 @@
+variables:
+  parity_version: "2.4.5"
 jobs:
   - job: 'Clippy'
     pool:
@@ -39,6 +41,15 @@ jobs:
         displayName: Install Node
       - script: npm install -g solc
         displayName: Install solcjs
+      - script: bash <(curl https://get.parity.io -L)
+        condition: ne( variables['Agent.OS'], 'Windows_NT' )
+        displayName: Install Parity
+      - bash: |
+          mkdir -p ../Downloads
+          cd ../Downloads
+          curl -L -o "parity.exe" "https://releases.parity.io/ethereum/v${PARITY_VERSION}/x86_64-pc-windows-msvc/parity.exe"
+        condition: eq( variables['Agent.OS'], 'Windows_NT' )
+        displayName: Windows install Parity
       - script: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           echo "##vso[task.setvariable variable=PATH;]$PATH:$HOME/.cargo/bin"
@@ -54,5 +65,13 @@ jobs:
         displayName: Cargo build
       - script: cargo test --all
         displayName: Cargo test vibranium
+      - script: nohup parity --config dev &
+        condition: ne( variables['Agent.OS'], 'Windows_NT' )
+        displayName: Start Parity
+      - bash: |
+          export PATH="$(cd ../Downloads && pwd):${PATH}"
+          nohup parity.exe --config dev &
+        condition: eq( variables['Agent.OS'], 'Windows_NT' )
+        displayName: Windwos start Parity
       - script: cd cli && cargo test --all
         displayName: Cargo test vibranium-cli
