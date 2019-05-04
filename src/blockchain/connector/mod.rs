@@ -12,9 +12,19 @@ pub type CallFuture = web3::helpers::CallFuture<Vec<web3::types::Address>, Box<d
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct BlockchainConnectorConfig {
-  protocol: String,
-  host: String,
-  port: String,
+  pub protocol: String,
+  pub host: String,
+  pub port: String,
+}
+
+impl Default for BlockchainConnectorConfig {
+  fn default() -> Self {
+    BlockchainConnectorConfig {
+      protocol: SupportedProtocols::Rpc.to_string(),
+      host: "localhost".to_string(),
+      port: "8545".to_string(),
+    }
+  }
 }
 
 pub enum SupportedProtocols {
