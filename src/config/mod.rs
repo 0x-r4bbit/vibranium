@@ -3,10 +3,12 @@ extern crate toml_query;
 pub mod error;
 
 use crate::blockchain;
+use crate::compiler;
 
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
+use std::default::Default;
 use toml_query::set::TomlValueSetExt;
 use toml_query::delete::TomlValueDeleteExt;
 use toml_query::insert::TomlValueInsertExt;
@@ -14,6 +16,8 @@ use toml_query::error::Error::IdentifierNotFoundInDocument;
 use blockchain::connector::BlockchainConnectorConfig;
 
 pub const VIBRANIUM_CONFIG_FILE: &str = "vibranium.toml";
+pub const DEFAULT_ARTIFACTS_DIRECTORY: &str = "artifacts";
+pub const DEFAULT_CONTRACTS_DIRECTORY: &str = "contracts";
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ProjectConfig {
@@ -22,10 +26,29 @@ pub struct ProjectConfig {
   pub blockchain: Option<ProjectBlockchainConfig>,
 }
 
+impl Default for ProjectConfig {
+  fn default() -> Self {
+    ProjectConfig {
+      sources: ProjectSourcesConfig::default(),
+      compiler: Some(ProjectCmdExecutionConfig::default()),
+      blockchain: Some(ProjectBlockchainConfig::default()),
+    }
+  }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ProjectCmdExecutionConfig {
   pub cmd: Option<String>,
   pub options: Option<Vec<String>>
+}
+
+impl Default for ProjectCmdExecutionConfig {
+  fn default() -> Self {
+    ProjectCmdExecutionConfig {
+      cmd: Some(compiler::support::SupportedCompilers::Solc.to_string()),
+      options: Some(compiler::support::default_options_from(compiler::support::SupportedCompilers::Solc))
+    }
+  }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -35,10 +58,29 @@ pub struct ProjectBlockchainConfig {
   pub connector: Option<BlockchainConnectorConfig>,
 }
 
+impl Default for ProjectBlockchainConfig {
+  fn default() -> Self {
+    ProjectBlockchainConfig {
+      cmd: Some(blockchain::support::SupportedBlockchainClients::Parity.to_string()),
+      options: Some(blockchain::support::default_options_from(blockchain::support::SupportedBlockchainClients::Parity)),
+      connector: Some(blockchain::connector::BlockchainConnectorConfig::default()),
+    }
+  }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ProjectSourcesConfig {
   pub artifacts: String,
   pub smart_contracts: Vec<String>,
+}
+
+impl Default for ProjectSourcesConfig {
+  fn default() -> Self {
+    ProjectSourcesConfig {
+      artifacts: DEFAULT_ARTIFACTS_DIRECTORY.to_string(),
+      smart_contracts: vec![DEFAULT_CONTRACTS_DIRECTORY.to_string() + "/*.sol"],
+    }
+  }
 }
 
 #[derive(Default, Debug)]
