@@ -58,7 +58,7 @@ impl fmt::Display for ConnectionError {
     match self {
       ConnectionError::UnsupportedProtocol => write!(f, "Couldn't create blockchain connector. The configured protocol is not supported"),
       ConnectionError::MissingConnectorConfig => write!(f, "Couldn't find configuration for blockchain connector in project configuration."),
-      ConnectionError::Transport(error) => write!(f, "{}", error.description()),
+      ConnectionError::Transport(error) => write!(f, "{}", error),
       ConnectionError::Other(message) => write!(f, "{}", message),
     }
   }

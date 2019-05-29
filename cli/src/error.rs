@@ -86,8 +86,7 @@ Make sure a blockchain connector configuration is provided in the project's vibr
             // Unfortunately, the underlying web3::Error doesn't properly
             // expose its error kinds, so we have to rely on string parsing
             // to transform them to meaningful error messages.
-            let error_message = error.0.to_string();
-
+            let error_message = error.to_string();
             if error_message.contains("Connection refused") {
               write!(f, "Unable to connect to blockchain. If you're trying to connect to a local blockchain node,
 make sure it's started first using the following command in a separate process:
@@ -98,7 +97,7 @@ make sure it's started first using the following command in a separate process:
               write!(f, "Unexpected blockchain client response. This is because of either a bad reponse from the blockchain client,
 or a wrong configuration of the blockchain connector (e.g. wrong port)")
             } else {
-              write!(f, "{}", error.0)
+              write!(f, "{}", error)
             }
           },
           _ => write!(f, "{}", error)
