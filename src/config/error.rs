@@ -16,17 +16,6 @@ pub enum ConfigError {
 }
 
 impl Error for ConfigError {
-  fn description(&self) -> &str {
-    match self {
-      ConfigError::Serialization(error) => error.description(),
-      ConfigError::Deserialization(error) => error.description(),
-      ConfigError::Query(_error) => "",
-      ConfigError::Deletion(_error) => "",
-      ConfigError::Io(error) => error.description(),
-      ConfigError::Other(message) => message,
-    }
-  }
-
   fn cause(&self) -> Option<&Error> {
     match self {
       ConfigError::Serialization(error) => Some(error),
@@ -47,7 +36,7 @@ impl fmt::Display for ConfigError {
       ConfigError::Query(error) => write!(f, "Couldn't query configuration: {}", error),
       ConfigError::Deletion(error) => write!(f, "{}", error),
       ConfigError::Io(error) => write!(f, "Couldn't access configuration file: {}", error),
-      ConfigError::Other(_message) => write!(f, "{}", self.description()),
+      ConfigError::Other(message) => write!(f, "{}", message),
     }
   }
 }

@@ -15,16 +15,6 @@ pub enum ProjectGenerationError {
 }
 
 impl Error for ProjectGenerationError {
-  fn description(&self) -> &str {
-    match self {
-      ProjectGenerationError::InvalidConfig(error) => error.description(),
-      ProjectGenerationError::ProjectPathNotFound => "Couldn't find directory for given project path",
-      ProjectGenerationError::VibraniumDirectoryNotFound => "Couldn't find .vibranium directory",
-      ProjectGenerationError::Io(error) => error.description(),
-      ProjectGenerationError::Serialization(error) => error.description(),
-    }
-  }
-
   fn cause(&self) -> Option<&Error> {
     match self {
       ProjectGenerationError::InvalidConfig(error) => Some(error),
@@ -40,8 +30,8 @@ impl fmt::Display for ProjectGenerationError {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
       ProjectGenerationError::InvalidConfig(error) => write!(f, "{}", error),
-      ProjectGenerationError::ProjectPathNotFound => write!(f, "{}", self.description()),
-      ProjectGenerationError::VibraniumDirectoryNotFound => write!(f, "Not a Vibranium project: {}", self.description()),
+      ProjectGenerationError::ProjectPathNotFound => write!(f, "Couldn't find directory for given project path"),
+      ProjectGenerationError::VibraniumDirectoryNotFound => write!(f, "Not a Vibranium project. Couldn't find .vibranium directory"),
       ProjectGenerationError::Io(error) => write!(f, "{}", error),
       ProjectGenerationError::Serialization(error) => write!(f, "Couldn't serialize data: {}", error),
     }
