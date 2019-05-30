@@ -10,11 +10,11 @@ pub enum NodeError {
 }
 
 impl Error for NodeError {
-  fn description(&self) -> &str {
+  fn cause(&self) -> Option<&Error> {
     match self {
-      NodeError::Io(ref err) => err.description(),
-      NodeError::UnsupportedClient => "No built-in support for request blockchain client. Please specify NodeConfig.client_options",
-      NodeError::Other(message) => message,
+      NodeError::Io(err) => Some(err),
+      NodeError::UnsupportedClient => None,
+      NodeError::Other(_message) => None,
     }
   }
 }
@@ -28,8 +28,8 @@ impl fmt::Display for NodeError {
           _ => write!(f, "{}", err),
         }
       },
-      NodeError::UnsupportedClient => write!(f, "{}", self.description()),
-      NodeError::Other(_message) => write!(f, "{}", self.description()),
+      NodeError::UnsupportedClient => write!(f, "No built-in support for request blockchain client. Please specify NodeConfig.client_options"),
+      NodeError::Other(message) => write!(f, "{}", message),
     }
   }
 }
@@ -43,12 +43,12 @@ pub enum ConnectionError {
 }
 
 impl Error for ConnectionError {
-  fn description(&self) -> &str {
+  fn cause(&self) -> Option<&Error> {
     match self {
-      ConnectionError::UnsupportedProtocol => "Couldn't create blockchain connector. The configured protocol is not supported",
-      ConnectionError::MissingConnectorConfig => "Couldn't find configuration for blockchain connector in project configuration.",
-      ConnectionError::Transport(error) => error.description(),
-      ConnectionError::Other(message) => message,
+      ConnectionError::UnsupportedProtocol => None,
+      ConnectionError::MissingConnectorConfig => None,
+      ConnectionError::Transport(error) => Some(error),
+      ConnectionError::Other(_message) => None,
     }
   }
 }
@@ -56,10 +56,10 @@ impl Error for ConnectionError {
 impl fmt::Display for ConnectionError {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      ConnectionError::UnsupportedProtocol => write!(f, "{}", self.description()),
-      ConnectionError::MissingConnectorConfig => write!(f, "{}", self.description()),
-      ConnectionError::Transport(_error) => write!(f, "{}", self.description()),
-      ConnectionError::Other(_message) => write!(f, "{}", self.description()),
+      ConnectionError::UnsupportedProtocol => write!(f, "Couldn't create blockchain connector. The configured protocol is not supported"),
+      ConnectionError::MissingConnectorConfig => write!(f, "Couldn't find configuration for blockchain connector in project configuration."),
+      ConnectionError::Transport(error) => write!(f, "{}", error.description()),
+      ConnectionError::Other(message) => write!(f, "{}", message),
     }
   }
 }
