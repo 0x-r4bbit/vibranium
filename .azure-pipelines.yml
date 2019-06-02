@@ -41,6 +41,8 @@ jobs:
         displayName: Install Node
       - script: npm install -g solc
         displayName: Install solcjs
+      - script: npm install -g ganache-cli
+        displayName: Install Ganache CLI
       - script: bash <(curl https://get.parity.io -L)
         condition: ne( variables['Agent.OS'], 'Windows_NT' )
         displayName: Install Parity
@@ -65,13 +67,15 @@ jobs:
         displayName: Cargo build
       - script: cargo test --all
         displayName: Cargo test vibranium
-      - script: nohup parity --config dev &
-        condition: ne( variables['Agent.OS'], 'Windows_NT' )
-        displayName: Start Parity
-      - bash: |
-          export PATH="$(cd ../Downloads && pwd):${PATH}"
-          nohup parity.exe --config dev &
-        condition: eq( variables['Agent.OS'], 'Windows_NT' )
-        displayName: Windwos start Parity
+      #- script: nohup parity --config dev &
+        #condition: ne( variables['Agent.OS'], 'Windows_NT' )
+        #displayName: Start Parity
+      #- bash: |
+          #export PATH="$(cd ../Downloads && pwd):${PATH}"
+          #nohup parity.exe --config dev &
+        #condition: eq( variables['Agent.OS'], 'Windows_NT' )
+        #displayName: Windwos start Parity
+      - script: nohup ganache-cli &
+        displayName: Start Ganache
       - script: cd cli && cargo test --all
         displayName: Cargo test vibranium-cli
