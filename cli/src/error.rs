@@ -8,6 +8,7 @@ use vibranium::compiler::error::CompilerError;
 use vibranium::config::error::ConfigError;
 use vibranium::blockchain::error::NodeError;
 use vibranium::blockchain::error::ConnectionError;
+use vibranium::deployment::error::DeploymentError;
 
 
 #[derive(Debug)]
@@ -17,6 +18,8 @@ pub enum CliError {
   ConfigurationDeleteError(ConfigError),
   BlockchainError(NodeError),
   BlockchainConnectorError(ConnectionError),
+  DeploymentError(DeploymentError),
+  Other(String),
 }
 
 impl Error for CliError {
@@ -27,6 +30,8 @@ impl Error for CliError {
       CliError::ConfigurationDeleteError(error) => Some(error),
       CliError::BlockchainError(error) => Some(error),
       CliError::BlockchainConnectorError(error) => Some(error),
+      CliError::DeploymentError(error) => Some(error),
+      CliError::Other(_message) => None,
     }
   }
 }
@@ -102,7 +107,24 @@ or a wrong configuration of the blockchain connector (e.g. wrong port)")
           },
           _ => write!(f, "{}", error)
         }
-      }
+      },
+      CliError::DeploymentError(error) => {
+        match error {
+          DeploymentError::MissingConfig => {
+            write!(f, "Unable to deploy Smart Contract. Couldn't find deployment configuration in project configuration.
+Make sure a deployment configuration is provided in the project's vibranium.toml file. E.g.:
+
+  [deployment]
+
+    [[deployment.smart_contracts]]
+      name = \"SmartContractName\"
+      args = [ {{ value = \"somevalue\", kind = \"string\" }} ]
+")
+          },
+          _ => write!(f, "{}", error)
+        }
+      },
+      CliError::Other(message) => write!(f, "{}", message),
     }
   }
 }

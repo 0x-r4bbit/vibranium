@@ -35,6 +35,14 @@ fn setup_vibranium_project(config: Option<ProjectConfig>) -> Result<(TempDir, Pa
   Ok((tmp_dir, project_path))
 }
 
+fn create_test_contract(project_path: &PathBuf, name: &str) -> Result<(), Box<std::error::Error>> {
+  let cwd = std::env::current_dir()?;
+  let fixture_file = cwd.join("tests").join("fixtures").join(name);
+  let test_contract_file = project_path.join("contracts").join(name);
+  std::fs::copy(fixture_file, test_contract_file)?;
+  Ok(())
+}
+
 fn read_config(project_path: &PathBuf) -> Result<ProjectConfig, Box<std::error::Error>> {
   let project_config = toml::from_str(&fs::read_to_string(&project_path.join("vibranium.toml"))?)?;
   Ok(project_config)
@@ -107,9 +115,8 @@ mod init_cmd {
 
     assert_eq!(&compiler_config.cmd.unwrap(), "solc");
     assert_eq!(&compiler_options[0], "--abi");
-    assert_eq!(&compiler_options[1], "--metadata");
-    assert_eq!(&compiler_options[2], "--userdoc");
-    assert_eq!(&compiler_options[3], "--overwrite");
+    assert_eq!(&compiler_options[1], "--bin");
+    assert_eq!(&compiler_options[2], "--overwrite");
 
     let blockchain_config = config.blockchain.unwrap();
     let blockchain_options = blockchain_config.options.unwrap();
@@ -501,6 +508,351 @@ mod accounts_cmd {
     cmd.assert()
       .success()
         .stdout(predicate::str::contains("(0) 0x"));
+
+    tmp_dir.close()?;
+    Ok(())
+  }
+}
+
+#[cfg(test)]
+mod deploy_cmd {
+
+  use std::process::Command;
+  use std::fs::File;
+  use assert_cmd::prelude::*;
+  use predicates::prelude::*;
+
+  use super::setup_vibranium_project;
+  use super::create_test_contract;
+  use vibranium::config::{
+    ProjectConfig,
+    ProjectDeploymentConfig,
+    SmartContractConfig,
+    SmartContractArg
+  };
+
+  #[test]
+  fn it_should_fail_if_no_deployment_config_is_provided() -> Result<(), Box<std::error::Error>> {
+    let (tmp_dir, project_path) = setup_vibranium_project(None)?;
+
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("deploy")
+        .arg("--path")
+        .arg(&project_path);
+
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("Couldn't find deployment configuration"));
+
+    tmp_dir.close()?;
+    Ok(())
+  }
+
+  #[test]
+  fn it_should_skip_deployment_if_no_artifacts_exist() -> Result<(), Box<std::error::Error>> {
+
+    let mut config = ProjectConfig::default();
+
+    config.deployment = Some(ProjectDeploymentConfig {
+      gas_limit: None,
+      gas_price: None,
+      tx_confirmations: None,
+      smart_contracts: vec![],
+    });
+
+    let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
+
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("deploy")
+        .arg("--path")
+        .arg(&project_path);
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("Nothing to deploy"));
+
+    tmp_dir.close()?;
+    Ok(())
+  }
+
+
+  #[test]
+  fn it_should_fail_if_parameter_args_are_not_valid() -> Result<(), Box<std::error::Error>> {
+
+    let mut config = ProjectConfig::default();
+    let contract_name = "SimpleTestContract";
+
+    config.deployment = Some(ProjectDeploymentConfig {
+      gas_limit: None,
+      gas_price: None,
+      tx_confirmations: None,
+      smart_contracts: vec![
+        SmartContractConfig {
+          name: contract_name.to_string(),
+          args: Some(vec![
+            SmartContractArg {
+              value: "2".to_string(),
+              kind: "invalid".to_string()
+            }
+          ])
+        }
+      ],
+    });
+
+    let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
+    create_test_contract(&project_path, "simple_test_contract.sol")?;
+
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("compile")
+        .arg("--compiler")
+        .arg("solcjs")
+        .arg("--path")
+        .arg(&project_path);
+
+    cmd.assert().success();
+    
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("deploy")
+        .arg("--path")
+        .arg(&project_path);
+
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("Couldn't read Smart Contract constructor parameter"));
+
+    tmp_dir.close()?;
+    Ok(())
+  }
+
+  #[test]
+  fn it_should_fail_if_it_can_not_tokenize_args() -> Result<(), Box<std::error::Error>> {
+
+    let mut config = ProjectConfig::default();
+    let contract_name = "SimpleTestContract";
+
+    config.deployment = Some(ProjectDeploymentConfig {
+      gas_limit: None,
+      gas_price: None,
+      tx_confirmations: None,
+      smart_contracts: vec![
+        SmartContractConfig {
+          name: contract_name.to_string(),
+          args: Some(vec![
+            SmartContractArg {
+              value: "200".to_string(),
+              kind: "bool".to_string()
+            }
+          ])
+        }
+      ],
+    });
+
+    let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
+    create_test_contract(&project_path, "simple_test_contract.sol")?;
+
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("compile")
+        .arg("--compiler")
+        .arg("solcjs")
+        .arg("--path")
+        .arg(&project_path);
+
+    cmd.assert().success();
+    
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("deploy")
+        .arg("--path")
+        .arg(&project_path);
+
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("Couldn't tokenize Smart Contract constructor parameter"));
+
+    tmp_dir.close()?;
+    Ok(())
+  }
+
+  #[test]
+  fn it_should_fail_if_too_many_constructor_args_provided() -> Result<(), Box<std::error::Error>> {
+
+    let mut config = ProjectConfig::default();
+    let contract_name = "SimpleTestContract";
+
+    config.deployment = Some(ProjectDeploymentConfig {
+      gas_limit: None,
+      gas_price: None,
+      tx_confirmations: None,
+      smart_contracts: vec![
+        SmartContractConfig {
+          name: contract_name.to_string(),
+          args: Some(vec![
+            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
+            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
+            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
+            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
+            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
+            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
+            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
+            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
+            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
+            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
+            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
+          ])
+        }
+      ],
+    });
+
+    let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
+    create_test_contract(&project_path, "simple_test_contract.sol")?;
+
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("compile")
+        .arg("--compiler")
+        .arg("solcjs")
+        .arg("--path")
+        .arg(&project_path);
+
+    cmd.assert().success();
+    
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("deploy")
+        .arg("--path")
+        .arg(&project_path);
+
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("too many constructor arguments"));
+
+    tmp_dir.close()?;
+    Ok(())
+  }
+
+  #[test]
+  fn it_should_fail_if_artifacts_are_partially_missing() -> Result<(), Box<std::error::Error>> {
+
+    let mut config = ProjectConfig::default();
+    let contract_name = "SimpleTestContract";
+
+    config.deployment = Some(ProjectDeploymentConfig {
+      gas_limit: None,
+      gas_price: None,
+      tx_confirmations: None,
+      smart_contracts: vec![SmartContractConfig {
+        name: contract_name.to_string(),
+        args: None
+      }],
+    });
+
+    let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
+    let artifacts_path = project_path.join("artifacts");
+
+    // Having a `contract.bin` but no `contract.abi` will cause Vibranium
+    // to stop the deployment.
+    let contracts_bin_path = artifacts_path.join("SimpleTestContract.bin");
+    let _file = File::create(contracts_bin_path)?;
+
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("deploy")
+        .arg("--path")
+        .arg(&project_path);
+
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("Couldn't find abi file for"));
+
+    tmp_dir.close()?;
+    Ok(())
+  }
+
+  #[test]
+  fn it_should_deploy_smart_contracts() -> Result<(), Box<std::error::Error>> {
+
+    let mut config = ProjectConfig::default();
+    let contract_name = "SimpleTestContract";
+
+    config.deployment = Some(ProjectDeploymentConfig {
+      gas_limit: None,
+      gas_price: None,
+      tx_confirmations: None,
+      smart_contracts: vec![
+        SmartContractConfig {
+          name: contract_name.to_string(),
+          args: Some(vec![
+            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
+          ])
+        },
+      ],
+    });
+
+    let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
+    create_test_contract(&project_path, "simple_test_contract.sol")?;
+
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("compile")
+        .arg("--compiler")
+        .arg("solcjs")
+        .arg("--path")
+        .arg(&project_path);
+
+    cmd.assert().success();
+    
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("deploy")
+        .arg("--path")
+        .arg(&project_path);
+
+    cmd.assert().success();
+
+    tmp_dir.close()?;
+    Ok(())
+  }
+
+  #[test]
+  fn it_should_deploy_multiple_smart_contracts() -> Result<(), Box<std::error::Error>> {
+
+    let mut config = ProjectConfig::default();
+    let contract_name = "SimpleTestContract";
+    let contract_name_2 = "SimpleTestContract2";
+
+    config.deployment = Some(ProjectDeploymentConfig {
+      gas_limit: None,
+      gas_price: None,
+      tx_confirmations: None,
+      smart_contracts: vec![
+        SmartContractConfig {
+          name: contract_name.to_string(),
+          args: Some(vec![
+            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
+          ])
+        },
+        SmartContractConfig {
+          name: contract_name_2.to_string(),
+          args: Some(vec![
+            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
+          ])
+        },
+      ],
+    });
+
+    let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
+    create_test_contract(&project_path, "simple_test_contract.sol")?;
+    create_test_contract(&project_path, "simple_test_contract_2.sol")?;
+
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("compile")
+        .arg("--compiler")
+        .arg("solcjs")
+        .arg("--path")
+        .arg(&project_path);
+
+    cmd.assert().success();
+    
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("deploy")
+        .arg("--path")
+        .arg(&project_path);
+
+    cmd.assert().success();
 
     tmp_dir.close()?;
     Ok(())

@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 jsonrpc-core = "11.0.0"
+ethabi = "7.0.0"
 toml = "0.4.10"
 toml-query = "0.8.0"
 serde = "1.0"

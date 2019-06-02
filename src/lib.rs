@@ -4,16 +4,20 @@ extern crate serde_derive;
 extern crate log;
 extern crate glob;
 extern crate web3;
+extern crate ethabi;
 
 pub mod blockchain;
 pub mod project_generator;
 pub mod compiler;
 pub mod config;
+pub mod deployment;
 mod utils;
 
 use std::process::{ExitStatus, Output};
 use std::path::PathBuf;
+use std::collections::HashMap;
 use blockchain::connector as connector;
+use web3::types::Address;
 
 #[derive(Debug)]
 pub struct Vibranium {
@@ -106,5 +110,11 @@ impl Vibranium {
         let blockchain_connector = connector::BlockchainConnector::new(adapter);
         Ok((eloop, blockchain_connector))
       })
+  }
+
+  pub fn deploy(&self) -> Result<HashMap<String, (String, Address)>, deployment::error::DeploymentError> {
+    let (_eloop, connector) = self.get_blockchain_connector().map_err(deployment::error::DeploymentError::Connection)?;
+    let deployer = deployment::Deployer::new(&self.config, &connector);
+    deployer.deploy()
   }
 }
