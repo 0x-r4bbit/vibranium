@@ -66,4 +66,16 @@ impl BlockchainConnector {
   pub fn accounts(&self) -> Result<Vec<web3::types::Address>, ConnectionError> {
     self.adapter.accounts().wait().map_err(ConnectionError::Transport)
   }
+
+  pub fn balance(&self, address: web3::types::Address, block_number: Option<web3::types::BlockNumber>) -> Result<web3::types::U256, ConnectionError> {
+    self.adapter.balance(address, block_number).wait().map_err(ConnectionError::Transport)
+  }
+
+  pub fn gas_price(&self) -> Result<web3::types::U256, ConnectionError> {
+    self.adapter.gas_price().wait().map_err(ConnectionError::Transport)
+  }
+
+  pub fn deploy(&self, bytes: &[u8]) -> Result<web3::contract::deploy::Builder<web3_adapter::Transports>, ethabi::Error> {
+    self.adapter.deploy(bytes)
+  }
 }

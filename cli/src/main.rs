@@ -14,7 +14,8 @@ use std::io::{self, Write};
 use clap::{App, SubCommand, Arg};
 
 use vibranium::Vibranium;
-use vibranium::blockchain::NodeConfig;
+use vibranium::blockchain;
+use vibranium::deployment;
 use vibranium::compiler::CompilerConfig;
 use vibranium::project_generator::ResetOptions;
 
@@ -143,6 +144,19 @@ fn run() -> Result<(), Error> {
                       .value_name("PATH")
                       .help("Specifies path to Vibranium project")
                       .takes_value(true))
+                  )
+                  .subcommand(SubCommand::with_name("deploy")
+                    .about("Deploys compiled artifacts")
+                    .arg(Arg::with_name("path")
+                      .short("p")
+                      .long("path")
+                      .value_name("PATH")
+                      .help("Specifies path to Vibranium project")
+                      .takes_value(true))
+                    .arg(Arg::with_name("verbose")
+                      .short("v")
+                      .long("verbose")
+                      .help("Generates verbose output"))
                   );
 
   let matches = app.clone().get_matches();
@@ -163,7 +177,7 @@ fn run() -> Result<(), Error> {
         options.map(std::string::ToString::to_string).collect()
       });
 
-      let config = NodeConfig {
+      let config = blockchain::NodeConfig {
         client: cmd.value_of("client").map(std::string::ToString::to_string),
         client_options,
       };
@@ -262,6 +276,32 @@ fn run() -> Result<(), Error> {
       for (i, address) in accounts.iter().enumerate() {
         println!("({}) {:?}", i, address);
       }
+    },
+
+    ("deploy", Some(cmd)) => {
+      println!("Deploying...");
+      let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
+      let vibranium = Vibranium::new(path);
+      vibranium.deploy()
+        .map_err(|err| {
+          match err {
+            deployment::error::DeploymentError::Connection(connector_error) => error::CliError::BlockchainConnectorError(connector_error),
+            deployment::error::DeploymentError::MissingConfig => error::CliError::DeploymentError(err),
+            _ => error::CliError::Other(err.to_string()),
+          }
+        }).and_then(|contracts| {
+          if contracts.is_empty() {
+            println!("Nothing to deploy.");
+          } else {
+            println!("");
+            for (artifact, data) in contracts {
+              println!("  {:?}: {} [Source: {}]", data.1, data.0, artifact);
+            }
+            println!("");
+            println!("Done.");
+          }
+          Ok(())
+        })?
     },
 
     _ => {

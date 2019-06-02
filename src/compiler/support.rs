@@ -36,8 +36,7 @@ pub fn default_options_from(compiler: SupportedCompilers) -> Vec<String> {
     SupportedCompilers::Solc => {
       vec![
         "--abi".to_string(),
-        "--metadata".to_string(),
-        "--userdoc".to_string(),
+        "--bin".to_string(),
         "--overwrite".to_string(),
         "-o".to_string()
       ]
@@ -45,6 +44,7 @@ pub fn default_options_from(compiler: SupportedCompilers) -> Vec<String> {
     SupportedCompilers::SolcJs => {
       vec![
         "--abi".to_string(),
+        "--bin".to_string(),
         "-o".to_string()
       ]
     },

@@ -24,6 +24,7 @@ pub struct ProjectConfig {
   pub sources: ProjectSourcesConfig,
   pub compiler: Option<ProjectCmdExecutionConfig>,
   pub blockchain: Option<ProjectBlockchainConfig>,
+  pub deployment: Option<ProjectDeploymentConfig>,
 }
 
 impl Default for ProjectConfig {
@@ -32,6 +33,7 @@ impl Default for ProjectConfig {
       sources: ProjectSourcesConfig::default(),
       compiler: Some(ProjectCmdExecutionConfig::default()),
       blockchain: Some(ProjectBlockchainConfig::default()),
+      deployment: None
     }
   }
 }
@@ -81,6 +83,26 @@ impl Default for ProjectSourcesConfig {
       smart_contracts: vec![DEFAULT_CONTRACTS_DIRECTORY.to_string() + "/*.sol"],
     }
   }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ProjectDeploymentConfig {
+  pub tx_confirmations: Option<usize>,
+  pub gas_price: Option<usize>,
+  pub gas_limit: Option<usize>,
+  pub smart_contracts: Vec<SmartContractConfig>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct SmartContractConfig {
+  pub name: String,
+  pub args: Option<Vec<SmartContractArg>>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct SmartContractArg {
+  pub value: String,
+  pub kind: String,
 }
 
 #[derive(Default, Debug)]
