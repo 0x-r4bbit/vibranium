@@ -594,7 +594,9 @@ mod deploy_cmd {
               value: "2".to_string(),
               kind: "invalid".to_string()
             }
-          ])
+          ]),
+          gas_limit: None,
+          gas_price: None,
         }
       ],
     });
@@ -642,7 +644,9 @@ mod deploy_cmd {
               value: "200".to_string(),
               kind: "bool".to_string()
             }
-          ])
+          ]),
+          gas_limit: None,
+          gas_price: None,
         }
       ],
     });
@@ -697,7 +701,9 @@ mod deploy_cmd {
             SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
             SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
             SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
-          ])
+          ]),
+          gas_limit: None,
+          gas_price: None,
         }
       ],
     });
@@ -739,7 +745,9 @@ mod deploy_cmd {
       tx_confirmations: None,
       smart_contracts: vec![SmartContractConfig {
         name: contract_name.to_string(),
-        args: None
+        args: None,
+        gas_limit: None,
+        gas_price: None,
       }],
     });
 
@@ -765,6 +773,48 @@ mod deploy_cmd {
   }
 
   #[test]
+  fn it_should_use_gas_limit_defined_in_smart_contract_config() -> Result<(), Box<std::error::Error>> {
+    let mut config = ProjectConfig::default();
+    let contract_name = "SimpleTestContract";
+
+    config.deployment = Some(ProjectDeploymentConfig {
+      gas_limit: None,
+      gas_price: None,
+      tx_confirmations: None,
+      smart_contracts: vec![SmartContractConfig {
+        name: contract_name.to_string(),
+        args: None,
+        gas_limit: Some(20000),
+        gas_price: None,
+      }],
+    });
+
+    let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
+    create_test_contract(&project_path, "simple_test_contract.sol")?;
+
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("compile")
+        .arg("--compiler")
+        .arg("solcjs")
+        .arg("--path")
+        .arg(&project_path);
+
+    cmd.assert().success();
+
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("deploy")
+        .arg("--path")
+        .arg(&project_path);
+
+    // The gas limit for SimpleTestContract is too low,
+    // so we expect the deployment to fail.
+    cmd.assert().failure();
+;
+    tmp_dir.close()?;
+    Ok(())
+  }
+
+  #[test]
   fn it_should_deploy_smart_contracts() -> Result<(), Box<std::error::Error>> {
 
     let mut config = ProjectConfig::default();
@@ -779,7 +829,9 @@ mod deploy_cmd {
           name: contract_name.to_string(),
           args: Some(vec![
             SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
-          ])
+          ]),
+          gas_limit: None,
+          gas_price: None,
         },
       ],
     });
@@ -823,13 +875,17 @@ mod deploy_cmd {
           name: contract_name.to_string(),
           args: Some(vec![
             SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
-          ])
+          ]),
+          gas_limit: None,
+          gas_price: None,
         },
         SmartContractConfig {
           name: contract_name_2.to_string(),
           args: Some(vec![
             SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
-          ])
+          ]),
+          gas_limit: None,
+          gas_price: None,
         },
       ],
     });

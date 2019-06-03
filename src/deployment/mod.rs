@@ -48,10 +48,8 @@ impl<'a> Deployer<'a> {
     let mut artifacts_dir = std::fs::read_dir(&artifacts_path).map_err(|err| DeploymentError::Other(err.to_string()))?;
     let accounts = self.connector.accounts().map_err(DeploymentError::Connection)?;
 
-    let gas_price = deployment_config.gas_price.map(U256::from)
-      .unwrap_or_else(|| self.connector.gas_price().ok().unwrap_or_else(|| U256::from(DEFAULT_GAS_PRICE)));
-    
-    let gas_limit = deployment_config.gas_limit.map(U256::from).unwrap_or(U256::from(DEFAULT_GAS_LIMIT));
+    let general_gas_price = deployment_config.gas_price.map(U256::from).unwrap_or_else(|| self.connector.gas_price().ok().unwrap_or_else(|| U256::from(DEFAULT_GAS_PRICE)));
+    let general_gas_limit = deployment_config.gas_limit.map(U256::from).unwrap_or(U256::from(DEFAULT_GAS_LIMIT));
 
     let confirmations = deployment_config.tx_confirmations.unwrap_or(DEFAULT_DEV_TX_CONFIRMATION_AMOUNT);
     let mut deployed_contracts = HashMap::new();
@@ -86,12 +84,15 @@ impl<'a> Deployer<'a> {
 
           info!("Deploying {}...", &smart_contract_config.name);
 
-          let mut builder = self.connector.deploy(&abi).map_err(|err| DeploymentError::Other(err.to_string()))?;
+          let mut builder = self.connector.deploy(&abi).map_err(|err| {
+            println!("{:?}", err);
+            DeploymentError::Other(err.to_string())
+          })?;
 
           builder = builder.confirmations(confirmations)
                                 .options(Options::with(|opts| {
-                                  opts.gas_price = Some(gas_price);
-                                  opts.gas = Some(gas_limit);
+                                  opts.gas_price = smart_contract_config.gas_price.map(U256::from).or(Some(general_gas_price));
+                                  opts.gas = smart_contract_config.gas_limit.map(U256::from).or(Some(general_gas_limit));
                                 }));
 
           let pending_contract = match args.iter().count() {
@@ -118,7 +119,7 @@ impl<'a> Deployer<'a> {
           };
           
           let pending_contract = pending_contract.map_err(|err| DeploymentError::InvalidConstructorArgs(err, smart_contract_config.name.to_owned()))?;
-          let contract = pending_contract.wait().map_err(|err| DeploymentError::Other(err.to_string()))?;
+          let contract = pending_contract.wait().map_err(|err| DeploymentError::DeployContract(err, smart_contract_config.name.to_owned()))?;
 
           info!("Deployed {} at {:?}", &smart_contract_config.name, &contract.address());
 
