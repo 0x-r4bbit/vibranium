@@ -12,6 +12,7 @@ pub enum DeploymentError {
   MissingArtifact(String, String),
   TooManyConstructorArgs(String),
   Connection(blockchain::error::ConnectionError),
+  DeployContract(web3::contract::deploy::Error, String),
   InvalidConstructorArgs(ethabi::Error, String),
   Other(String),
 }
@@ -26,6 +27,7 @@ impl Error for DeploymentError {
       DeploymentError::MissingArtifact(_kind, _name) => None,
       DeploymentError::TooManyConstructorArgs(_name) => None,
       DeploymentError::Connection(error) => Some(error),
+      DeploymentError::DeployContract(error, _name) => Some(error),
       DeploymentError::InvalidConstructorArgs(error, _name) => Some(error),
       DeploymentError::Other(_message) => None,
     }
@@ -42,6 +44,7 @@ impl fmt::Display for DeploymentError {
       DeploymentError::MissingArtifact(kind, name) => write!(f, "Couldn't find {} file for artifact '{}'", kind, name),
       DeploymentError::TooManyConstructorArgs(name) => write!(f, "Couldn't deploy Smart Contract '{}' due to too many constructor arguments (max. 10)", name),
       DeploymentError::Connection(error) => write!(f, "{}", error),
+      DeploymentError::DeployContract(error, name) => write!(f, "Couldn't deploy Smart Contract '{}' due to {}", name, error),
       DeploymentError::InvalidConstructorArgs(_error, name) => write!(f, "Couldn't deploy Smart Contract '{}' due to mismatching types in constructor arguments.", name),
       DeploymentError::Other(message) => write!(f, "{}", message),
     }
