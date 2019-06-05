@@ -81,5 +81,5 @@ jobs:
       - powershell: Start-Process -FilePath "ganache-cli"
         displayName: Windows start Ganache
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
-      - script: cd cli && cargo test --all --nocapture
+      - script: cd cli && cargo test --all -- --nocapture
         displayName: Cargo test vibranium-cli
