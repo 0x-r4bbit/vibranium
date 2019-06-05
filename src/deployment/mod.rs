@@ -84,41 +84,19 @@ impl<'a> Deployer<'a> {
 
           info!("Deploying {}...", &smart_contract_config.name);
 
-          let mut builder = self.connector.deploy(&abi).map_err(|err| {
+          let builder = self.connector.deploy(&abi).map_err(|err| {
             println!("{:?}", err);
             DeploymentError::Other(err.to_string())
           })?;
 
-          builder = builder.confirmations(confirmations)
+          let pending_contract = builder.confirmations(confirmations)
                                 .options(Options::with(|opts| {
                                   opts.gas_price = smart_contract_config.gas_price.map(U256::from).or(Some(general_gas_price));
                                   opts.gas = smart_contract_config.gas_limit.map(U256::from).or(Some(general_gas_limit));
-                                }));
+                                }))
+                                .execute(bytecode, &*args, accounts[0])
+                                .map_err(|err| DeploymentError::InvalidConstructorArgs(err, smart_contract_config.name.to_owned()))?;
 
-          let pending_contract = match args.iter().count() {
-            0 => builder.execute(bytecode, (), accounts[0]),
-            1 => builder.execute(bytecode, args[0].to_owned(), accounts[0]),
-            2 => builder.execute(bytecode, (args[0].to_owned(), args[1].to_owned()), accounts[0]),
-            3 => builder.execute(bytecode, (args[0].to_owned(), args[1].to_owned(), args[2].to_owned()), accounts[0]),
-            4 => builder.execute(bytecode, (args[0].to_owned(), args[1].to_owned(), args[2].to_owned(), args[3].to_owned()), accounts[0]),
-            5 => builder.execute(bytecode, (args[0].to_owned(), args[1].to_owned(), args[2].to_owned(), args[3].to_owned(),
-                                            args[4].to_owned()), accounts[0]),
-            6 => builder.execute(bytecode, (args[0].to_owned(), args[1].to_owned(), args[2].to_owned(), args[3].to_owned(),
-                                            args[4].to_owned(), args[5].to_owned()), accounts[0]),
-            7 => builder.execute(bytecode, (args[0].to_owned(), args[1].to_owned(), args[2].to_owned(), args[3].to_owned(),
-                                            args[4].to_owned(), args[5].to_owned(), args[6].to_owned()), accounts[0]),
-            8 => builder.execute(bytecode, (args[0].to_owned(), args[1].to_owned(), args[2].to_owned(), args[3].to_owned(),
-                                            args[4].to_owned(), args[5].to_owned(), args[6].to_owned(), args[7].to_owned()), accounts[0]),
-            9 => builder.execute(bytecode, (args[0].to_owned(), args[1].to_owned(), args[2].to_owned(), args[3].to_owned(),
-                                            args[4].to_owned(), args[5].to_owned(), args[6].to_owned(), args[7].to_owned(),
-                                            args[8].to_owned()), accounts[0]),
-            10 => builder.execute(bytecode, (args[0].to_owned(), args[1].to_owned(), args[2].to_owned(), args[3].to_owned(),
-                                            args[4].to_owned(), args[5].to_owned(), args[6].to_owned(), args[7].to_owned(),
-                                            args[8].to_owned(), args[9].to_owned()), accounts[0]),
-            _ => return Err(DeploymentError::TooManyConstructorArgs(smart_contract_config.name.to_owned())),
-          };
-          
-          let pending_contract = pending_contract.map_err(|err| DeploymentError::InvalidConstructorArgs(err, smart_contract_config.name.to_owned()))?;
           let contract = pending_contract.wait().map_err(|err| DeploymentError::DeployContract(err, smart_contract_config.name.to_owned()))?;
 
           info!("Deployed {} at {:?}", &smart_contract_config.name, &contract.address());

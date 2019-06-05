@@ -677,63 +677,6 @@ mod deploy_cmd {
   }
 
   #[test]
-  fn it_should_fail_if_too_many_constructor_args_provided() -> Result<(), Box<std::error::Error>> {
-
-    let mut config = ProjectConfig::default();
-    let contract_name = "SimpleTestContract";
-
-    config.deployment = Some(ProjectDeploymentConfig {
-      gas_limit: None,
-      gas_price: None,
-      tx_confirmations: None,
-      smart_contracts: vec![
-        SmartContractConfig {
-          name: contract_name.to_string(),
-          args: Some(vec![
-            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
-            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
-            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
-            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
-            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
-            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
-            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
-            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
-            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
-            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
-            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
-          ]),
-          gas_limit: None,
-          gas_price: None,
-        }
-      ],
-    });
-
-    let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
-    create_test_contract(&project_path, "simple_test_contract.sol")?;
-
-    let mut cmd = Command::main_binary()?;
-    cmd.arg("compile")
-        .arg("--compiler")
-        .arg("solcjs")
-        .arg("--path")
-        .arg(&project_path);
-
-    cmd.assert().success();
-    
-    let mut cmd = Command::main_binary()?;
-    cmd.arg("deploy")
-        .arg("--path")
-        .arg(&project_path);
-
-    cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains("too many constructor arguments"));
-
-    tmp_dir.close()?;
-    Ok(())
-  }
-
-  #[test]
   fn it_should_fail_if_artifacts_are_partially_missing() -> Result<(), Box<std::error::Error>> {
 
     let mut config = ProjectConfig::default();
