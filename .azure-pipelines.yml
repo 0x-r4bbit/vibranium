@@ -14,24 +14,24 @@ jobs:
   - job: 'Test'
     strategy:
       matrix:
-        #windows-stable:
-          #imageName: 'vs2017-win2016'
-          #rustup_toolchain: stable
+        windows-stable:
+          imageName: 'vs2017-win2016'
+          rustup_toolchain: stable
         #windows-beta:
           #imageName: 'vs2017-win2016'
           #rustup_toolchain: beta
-        mac-stable:
-          imageName: 'macos-10.13'
-          rustup_toolchain: stable
-        mac-beta:
-          imageName: 'macos-10.13'
-          rustup_toolchain: beta
-        linux-stable:
-          imageName: 'ubuntu-16.04'
-          rustup_toolchain: stable
-        linux-beta:
-          imageName: 'ubuntu-16.04'
-          rustup_toolchain: beta
+        #mac-stable:
+          #imageName: 'macos-10.13'
+          #rustup_toolchain: stable
+        #mac-beta:
+          #imageName: 'macos-10.13'
+          #rustup_toolchain: beta
+        #linux-stable:
+          #imageName: 'ubuntu-16.04'
+          #rustup_toolchain: stable
+        #linux-beta:
+          #imageName: 'ubuntu-16.04'
+          #rustup_toolchain: beta
     pool:
       vmImage: $(imageName)
     steps:
@@ -77,5 +77,9 @@ jobs:
         #displayName: Windwos start Parity
       - script: nohup ganache-cli &
         displayName: Start Ganache
+        condition: ne( variables['Agent.OS'], 'Windows_NT' )
+      - powershell: Start-Process -FilePath "ganache-cli"
+        displayName: Windows start Ganache
+        condition: eq( variables['Agent.OS'], 'Windows_NT' )
       - script: cd cli && cargo test --all
         displayName: Cargo test vibranium-cli
