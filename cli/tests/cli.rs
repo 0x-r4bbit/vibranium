@@ -472,6 +472,11 @@ mod compile_cmd {
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
     create_test_contract(&project_path, "simple_test_contract.sol")?;
 
+    let paths = std::fs::read_dir(&project_path.join("contracts")).unwrap();
+    for path in paths {
+      assert_eq!(path.unwrap().path().to_str().unwrap(), "foo");
+    }
+
     let mut cmd = Command::main_binary()?;
     cmd.arg("compile")
         .arg("--compiler")
@@ -481,10 +486,6 @@ mod compile_cmd {
     cmd.assert().success();
 
 
-    /* let paths = std::fs::read_dir(&project_path.join("artifacts")).unwrap(); */
-    /* for path in paths { */
-    /*   assert_eq!(path.unwrap().path().to_str().unwrap(), "foo"); */
-    /* } */
     Ok(())
   }
 }
