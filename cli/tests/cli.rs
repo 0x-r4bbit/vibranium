@@ -66,7 +66,6 @@ fn set_configuration(config: &str, value: &str, project_path: &PathBuf) -> Resul
   Ok(())
 }
 
-#[cfg(test)]
 mod init_cmd {
 
   use std::process::Command;
@@ -76,7 +75,6 @@ mod init_cmd {
   use super::setup_vibranium_project;
   use super::read_config;
 
-  #[test]
   fn it_should_fail_on_init_if_project_path_doesnt_exist() -> Result<(), Box<std::error::Error>> {
     let mut cmd = Command::main_binary()?;
     cmd.arg("init")
@@ -88,7 +86,6 @@ mod init_cmd {
     Ok(())
   }
 
-  #[test]
   fn it_should_initialize_project() -> Result<(), Box<std::error::Error>> {
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
 
@@ -101,7 +98,6 @@ mod init_cmd {
     Ok(())
   }
 
-  #[test]
   fn it_should_initialize_project_with_default_config_preset() -> Result<(), Box<std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
@@ -130,7 +126,6 @@ mod init_cmd {
   }
 }
 
-#[cfg(test)]
 mod reset_cmd {
 
   use std::process::Command;
@@ -145,7 +140,6 @@ mod reset_cmd {
   use super::set_configurations;
   use super::read_config;
 
-  #[test]
   fn it_should_fail_on_reset_if_project_is_not_a_vibranium_project() -> Result<(), Box<std::error::Error>> {
     let tmp_dir = tempdir()?;
 
@@ -161,7 +155,6 @@ mod reset_cmd {
     Ok(())
   }
 
-  #[test]
   fn it_should_reset_project() -> Result<(), Box<std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
@@ -192,7 +185,6 @@ mod reset_cmd {
     Ok(())
   }
 
-  #[test]
   fn it_should_honor_changes_in_vibranium_toml_when_resetting_project() -> Result<(), Box<std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
@@ -212,7 +204,6 @@ mod reset_cmd {
     Ok(())
   }
 
-  #[test]
   fn it_should_restore_config_file_with_defaults_when_resetting_project() -> Result<(), Box<std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
@@ -251,7 +242,6 @@ mod reset_cmd {
   }
 }
 
-#[cfg(test)]
 mod config_cmd {
 
   use std::process::Command;
@@ -262,7 +252,6 @@ mod config_cmd {
   use super::set_configuration;
   use super::read_config;
 
-  #[test]
   fn it_should_update_vibranium_config_file_via_config_command() -> Result<(), Box<std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
@@ -275,7 +264,6 @@ mod config_cmd {
     Ok(())
   }
 
-  #[test]
   fn it_accept_multi_value_config_options_using_array_syntax() -> Result<(), Box<std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
@@ -289,7 +277,6 @@ mod config_cmd {
     Ok(())
   }
 
-  #[test]
   fn it_should_remove_empty_values_when_setting_multi_value_options() -> Result<(), Box<std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
@@ -302,7 +289,6 @@ mod config_cmd {
     Ok(())
   }
 
-  #[test]
   fn it_should_fail_when_setting_incompatible_config_value_for_config_option() -> Result<(), Box<std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
@@ -323,7 +309,6 @@ mod config_cmd {
     Ok(())
   }
 
-  #[test]
   fn it_should_ignore_config_options_that_do_not_exist() -> Result<(), Box<std::error::Error>> {
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
     set_configuration("unknown", "foo", &project_path)?;
@@ -331,7 +316,6 @@ mod config_cmd {
     Ok(())
   }
 
-  #[test]
   fn it_should_remove_config_option() -> Result<(), Box<std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
@@ -363,8 +347,8 @@ mod compile_cmd {
   use super::setup_vibranium_project;
   use super::set_configuration;
   use super::set_configurations;
+  use super::create_test_contract;
 
-  #[test]
   fn it_should_fail_when_given_compiler_option_is_not_supported_and_no_compiler_options_specificed() -> Result<(), Box<std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
@@ -387,7 +371,6 @@ mod compile_cmd {
     Ok(())
   }
 
-  #[test]
   fn it_should_fail_when_given_compiler_is_not_installed() -> Result<(), Box<std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
@@ -413,7 +396,6 @@ mod compile_cmd {
     Ok(())
   }
 
-  #[test]
   fn it_should_fail_when_compiler_program_fails() -> Result<(), Box<std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
@@ -436,7 +418,6 @@ mod compile_cmd {
     Ok(())
   }
 
-  #[test]
   fn it_should_honor_compiler_options_specified_in_config_file() -> Result<(), Box<std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
@@ -462,7 +443,6 @@ mod compile_cmd {
     Ok(())
   }
 
-  #[test]
   fn it_should_override_config_file_compiler_options_with_cli_options() -> Result<(), Box<std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
@@ -485,9 +465,30 @@ mod compile_cmd {
     tmp_dir.close()?;
     Ok(())
   }
+
+  #[test]
+  fn it_should_compile_and_generate_artifacts() -> Result<(), Box<std::error::Error>> {
+
+    let (tmp_dir, project_path) = setup_vibranium_project(None)?;
+    create_test_contract(&project_path, "simple_test_contract.sol")?;
+
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("compile")
+        .arg("--compiler")
+        .arg("solcjs")
+        .arg("--path")
+        .arg(&project_path);
+    cmd.assert().success();
+
+
+    /* let paths = std::fs::read_dir(&project_path.join("artifacts")).unwrap(); */
+    /* for path in paths { */
+    /*   assert_eq!(path.unwrap().path().to_str().unwrap(), "foo"); */
+    /* } */
+    Ok(())
+  }
 }
 
-#[cfg(test)]
 mod accounts_cmd {
 
   use std::process::Command;
@@ -496,7 +497,6 @@ mod accounts_cmd {
 
   use super::setup_vibranium_project;
 
-  #[test]
   fn it_should_output_local_blockchains_dev_accounts() -> Result<(), Box<std::error::Error>> {
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
 
@@ -514,7 +514,6 @@ mod accounts_cmd {
   }
 }
 
-#[cfg(test)]
 mod deploy_cmd {
 
   use std::process::Command;
@@ -531,7 +530,6 @@ mod deploy_cmd {
     SmartContractArg
   };
 
-  #[test]
   fn it_should_fail_if_no_deployment_config_is_provided() -> Result<(), Box<std::error::Error>> {
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
 
@@ -548,7 +546,6 @@ mod deploy_cmd {
     Ok(())
   }
 
-  #[test]
   fn it_should_skip_deployment_if_no_artifacts_exist() -> Result<(), Box<std::error::Error>> {
 
     let mut config = ProjectConfig::default();
@@ -576,7 +573,6 @@ mod deploy_cmd {
   }
 
 
-  #[test]
   fn it_should_fail_if_parameter_args_are_not_valid() -> Result<(), Box<std::error::Error>> {
 
     let mut config = ProjectConfig::default();
@@ -626,7 +622,6 @@ mod deploy_cmd {
     Ok(())
   }
 
-  #[test]
   fn it_should_fail_if_it_can_not_tokenize_args() -> Result<(), Box<std::error::Error>> {
 
     let mut config = ProjectConfig::default();
@@ -676,7 +671,6 @@ mod deploy_cmd {
     Ok(())
   }
 
-  #[test]
   fn it_should_fail_if_too_many_constructor_args_provided() -> Result<(), Box<std::error::Error>> {
 
     let mut config = ProjectConfig::default();
@@ -733,7 +727,6 @@ mod deploy_cmd {
     Ok(())
   }
 
-  #[test]
   fn it_should_fail_if_artifacts_are_partially_missing() -> Result<(), Box<std::error::Error>> {
 
     let mut config = ProjectConfig::default();
@@ -772,7 +765,6 @@ mod deploy_cmd {
     Ok(())
   }
 
-  #[test]
   fn it_should_use_gas_limit_defined_in_smart_contract_config() -> Result<(), Box<std::error::Error>> {
     let mut config = ProjectConfig::default();
     let contract_name = "SimpleTestContract";
@@ -814,7 +806,6 @@ mod deploy_cmd {
     Ok(())
   }
 
-  #[test]
   fn it_should_deploy_smart_contracts() -> Result<(), Box<std::error::Error>> {
 
     let mut config = ProjectConfig::default();
@@ -859,7 +850,6 @@ mod deploy_cmd {
     Ok(())
   }
 
-  #[test]
   fn it_should_deploy_multiple_smart_contracts() -> Result<(), Box<std::error::Error>> {
 
     let mut config = ProjectConfig::default();
