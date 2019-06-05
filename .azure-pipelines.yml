@@ -26,9 +26,9 @@ jobs:
         #mac-beta:
           #imageName: 'macos-10.13'
           #rustup_toolchain: beta
-        #linux-stable:
-          #imageName: 'ubuntu-16.04'
-          #rustup_toolchain: stable
+        linux-stable:
+          imageName: 'ubuntu-16.04'
+          rustup_toolchain: stable
         #linux-beta:
           #imageName: 'ubuntu-16.04'
           #rustup_toolchain: beta
