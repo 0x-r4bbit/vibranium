@@ -481,6 +481,7 @@ mod compile_cmd {
     cmd.arg("compile")
         .arg("--compiler")
         .arg("solcjs")
+        .arg("--verbose")
         .arg("--path")
         .arg(&project_path);
     cmd.assert().success();
