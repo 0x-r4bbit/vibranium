@@ -68,9 +68,10 @@ impl<'a> Compiler<'a> {
     for pattern in &project_config.sources.smart_contracts {
       let mut full_pattern = self.config.project_path.clone();
       full_pattern.push(&pattern);
-      for entry in glob(&full_pattern.to_str().unwrap()).unwrap().filter_map(Result::ok) {
-        compiler_options.push(entry.to_string_lossy().to_string());
-      }
+      compiler_options.push(full_pattern.to_string_lossy().to_string());
+      /* for entry in glob(&full_pattern.to_str().unwrap()).unwrap().filter_map(Result::ok) { */
+      /*   compiler_options.push(entry.to_string_lossy().to_string()); */
+      /* } */
     }
 
     compiler_options.insert(0, compiler.to_string());

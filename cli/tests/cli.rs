@@ -477,6 +477,8 @@ mod compile_cmd {
     /*   assert_eq!(path.unwrap().path().to_str().unwrap(), "foo"); */
     /* } */
 
+    println!("Foooo");
+
     let mut cmd = Command::main_binary()?;
     cmd.arg("compile")
         .arg("--compiler")
