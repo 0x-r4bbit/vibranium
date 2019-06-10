@@ -1,7 +1,11 @@
 [package]
 name = "vibranium"
+description = "A library that offers APIs to build tools for creating decentralized applications."
 version = "0.1.0"
 authors = ["Pascal Precht <pascal.precht@gmail.com>"]
+license = "MIT"
+homepage = "https://github.com/PascalPrecht/vibranium"
+documentation = "https://github.com/PascalPrecht/vibranium/blob/master/README.md"
 edition = "2018"
 
 [dependencies]
