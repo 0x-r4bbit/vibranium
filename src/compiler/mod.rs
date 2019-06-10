@@ -30,8 +30,8 @@ impl<'a> Compiler<'a> {
 
     let compiler = config.compiler.unwrap_or_else(|| {
       match &project_config.compiler {
-        Some(config) => config.cmd.clone().unwrap_or_else(|| SupportedCompilers::Solc.to_string()),
-        None => SupportedCompilers::Solc.to_string(),
+        Some(config) => config.cmd.clone().unwrap_or_else(|| SupportedCompilers::Solc.executable()),
+        None => SupportedCompilers::Solc.executable(),
       }
     });
 
