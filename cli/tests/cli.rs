@@ -421,17 +421,11 @@ mod compile_cmd {
     let mut cmd = Command::main_binary()?;
 
     cmd.arg("compile")
-        .arg("--compiler")
-        .arg("solcjs")
         .arg("--path")
         .arg(&project_path);
 
-    // We don't provide any source files to solcjs, so we know it
-    // will fail with the error message below.
-    cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains("Must provide a file"));
-
+    // We don't provide any source files to solc, so we know it will
+    cmd.assert().failure();
     tmp_dir.close()?;
     Ok(())
   }
@@ -447,17 +441,11 @@ mod compile_cmd {
 
     let mut cmd = Command::main_binary()?;
 
-    // There are no Smart Contract files in the generated project
-    // so if everything goes as expected, this command fails with
-    // `solcjs` exiting with the error message below.
     cmd.arg("compile")
         .arg("--path")
         .arg(&project_path);
 
-    cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains("Must provide a file"));
-    
+    cmd.assert().failure();
     tmp_dir.close()?;
     Ok(())
   }
@@ -472,16 +460,13 @@ mod compile_cmd {
     let mut cmd = Command::main_binary()?;
     cmd.arg("compile")
         .arg("--compiler")
-        .arg("solcjs")
+        .arg("something")
         .arg("--path")
         .arg(&project_path);
 
-    // Failure is the expected behaviour here as we don't provide any Smart Contract
-    // source files to `solcjs`.
-    cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains("Must provide a file"));
-
+    // Failure is the expected behaviour here as we don't provide a valid 
+    // compiler option
+    cmd.assert().failure();
     tmp_dir.close()?;
     Ok(())
   }
@@ -606,8 +591,6 @@ mod deploy_cmd {
 
     let mut cmd = Command::main_binary()?;
     cmd.arg("compile")
-        .arg("--compiler")
-        .arg("solcjs")
         .arg("--path")
         .arg(&project_path);
 
@@ -656,8 +639,6 @@ mod deploy_cmd {
 
     let mut cmd = Command::main_binary()?;
     cmd.arg("compile")
-        .arg("--compiler")
-        .arg("solcjs")
         .arg("--path")
         .arg(&project_path);
 
@@ -737,8 +718,6 @@ mod deploy_cmd {
 
     let mut cmd = Command::main_binary()?;
     cmd.arg("compile")
-        .arg("--compiler")
-        .arg("solcjs")
         .arg("--path")
         .arg(&project_path);
 
@@ -784,8 +763,6 @@ mod deploy_cmd {
 
     let mut cmd = Command::main_binary()?;
     cmd.arg("compile")
-        .arg("--compiler")
-        .arg("solcjs")
         .arg("--path")
         .arg(&project_path);
 
@@ -839,8 +816,6 @@ mod deploy_cmd {
 
     let mut cmd = Command::main_binary()?;
     cmd.arg("compile")
-        .arg("--compiler")
-        .arg("solcjs")
         .arg("--path")
         .arg(&project_path);
 
