@@ -1,7 +1,11 @@
 [package]
 name = "vibranium-cli"
+description = "A commandline interface powered by the Vibranium crate."
 version = "0.1.0"
 authors = ["Pascal Precht <pascal.precht@gmail.com>"]
+license = "MIT"
+homepage = "https://github.com/PascalPrecht/vibranium"
+documentation = "https://github.com/PascalPrecht/vibranium/blob/master/README.md"
 edition = "2018"
 
 [dependencies]
