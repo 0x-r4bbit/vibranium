@@ -18,4 +18,4 @@ serde_derive = "1.0"
 serde_json = "1.0"
 log = "0.4.6"
 glob = "0.3"
-web3 = { git = "https://github.com/tomusdrw/rust-web3", rev = "21cb38c" }
+web3 = "0.7.0"
