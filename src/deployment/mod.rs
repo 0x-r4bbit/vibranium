@@ -84,10 +84,7 @@ impl<'a> Deployer<'a> {
 
           info!("Deploying {}...", &smart_contract_config.name);
 
-          let builder = self.connector.deploy(&abi).map_err(|err| {
-            println!("{:?}", err);
-            DeploymentError::Other(err.to_string())
-          })?;
+          let builder = self.connector.deploy(&abi).map_err(|err| DeploymentError::Other(err.to_string()))?;
 
           let pending_contract = builder.confirmations(confirmations)
                                 .options(Options::with(|opts| {
