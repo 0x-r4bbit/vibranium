@@ -297,7 +297,11 @@ fn run() -> Result<(), Error> {
           } else {
             println!();
             for (artifact, data) in contracts {
-              println!("  {:?}: {} [Source: {}]", data.1, data.0, artifact);
+              if data.2 {
+                println!("  {:?}: {} (skipped) [Source: {}]", data.1, data.0, artifact);
+              } else {
+                println!("  {:?}: {} [Source: {}]", data.1, data.0, artifact);
+              }
             }
             println!();
             println!("Done.");

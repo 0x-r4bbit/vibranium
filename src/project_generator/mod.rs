@@ -9,7 +9,7 @@ use crate::config;
 
 pub mod error;
 
-const VIBRANIUM_PROJECT_DIRECTORY: &str = ".vibranium";
+pub const VIBRANIUM_PROJECT_DIRECTORY: &str = ".vibranium";
 
 pub struct ProjectGenerator<'a> {
   config: &'a config::Config,

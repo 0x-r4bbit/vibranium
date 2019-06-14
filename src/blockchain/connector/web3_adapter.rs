@@ -4,6 +4,7 @@ use super::super::super::utils;
 use web3::futures::Future;
 use web3::helpers::CallFuture;
 use web3::contract::Contract;
+use web3::types::{Address, Block, BlockId, BlockNumber, H256, U256};
 use ethabi;
 use jsonrpc_core as rpc;
 
@@ -53,16 +54,20 @@ impl Web3Adapter {
     Ok((eloop, Web3Adapter { web3 }))
   }
 
-  pub fn accounts(&self) -> CallFuture<Vec<web3::types::Address>, Box<dyn Future<Item = rpc::Value, Error = web3::Error>>> {
+  pub fn accounts(&self) -> CallFuture<Vec<Address>, Box<dyn Future<Item = rpc::Value, Error = web3::Error>>> {
     self.web3.eth().accounts()
   }
 
-  pub fn balance(&self, address: web3::types::Address, block_number: Option<web3::types::BlockNumber>) -> CallFuture<web3::types::U256, Box<dyn Future<Item = rpc::Value, Error = web3::Error>>> {
+  pub fn balance(&self, address: Address, block_number: Option<BlockNumber>) -> CallFuture<U256, Box<dyn Future<Item = rpc::Value, Error = web3::Error>>> {
     self.web3.eth().balance(address, block_number)
   }
 
-  pub fn gas_price(&self) -> CallFuture<web3::types::U256, Box<dyn Future<Item = rpc::Value, Error = web3::Error>>> {
+  pub fn gas_price(&self) -> CallFuture<U256, Box<dyn Future<Item = rpc::Value, Error = web3::Error>>> {
     self.web3.eth().gas_price()
+  }
+
+  pub fn get_block(&self, block: BlockId) -> CallFuture<Option<Block<H256>>, Box<dyn Future<Item = rpc::Value, Error = web3::Error>>> {
+    self.web3.eth().block(block)
   }
 
   pub fn deploy(&self, bytes: &[u8]) -> Result<web3::contract::deploy::Builder<Transports>, ethabi::Error> {

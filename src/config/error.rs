@@ -1,9 +1,8 @@
-extern crate toml;
-extern crate toml_query;
-
 use std::error::Error;
 use std::fmt;
 use std::io;
+use toml;
+use toml_query;
 
 #[derive(Debug)]
 pub enum ConfigError {

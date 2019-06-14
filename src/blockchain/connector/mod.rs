@@ -5,10 +5,11 @@ use std::string::ToString;
 use super::error::ConnectionError;
 use web3_adapter::Web3Adapter;
 use web3::futures::Future;
+use web3::types::{Address, Block, BlockId, BlockNumber, H256, U256};
 use jsonrpc_core as rpc;
 
 
-pub type CallFuture = web3::helpers::CallFuture<Vec<web3::types::Address>, Box<dyn Future<Item = rpc::Value, Error = web3::Error>>>;
+pub type CallFuture = web3::helpers::CallFuture<Vec<Address>, Box<dyn Future<Item = rpc::Value, Error = web3::Error>>>;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct BlockchainConnectorConfig {
@@ -63,16 +64,20 @@ impl BlockchainConnector {
     }
   }
 
-  pub fn accounts(&self) -> Result<Vec<web3::types::Address>, ConnectionError> {
+  pub fn accounts(&self) -> Result<Vec<Address>, ConnectionError> {
     self.adapter.accounts().wait().map_err(ConnectionError::Transport)
   }
 
-  pub fn balance(&self, address: web3::types::Address, block_number: Option<web3::types::BlockNumber>) -> Result<web3::types::U256, ConnectionError> {
+  pub fn balance(&self, address: Address, block_number: Option<BlockNumber>) -> Result<U256, ConnectionError> {
     self.adapter.balance(address, block_number).wait().map_err(ConnectionError::Transport)
   }
 
-  pub fn gas_price(&self) -> Result<web3::types::U256, ConnectionError> {
+  pub fn gas_price(&self) -> Result<U256, ConnectionError> {
     self.adapter.gas_price().wait().map_err(ConnectionError::Transport)
+  }
+
+  pub fn get_block(&self, block: BlockId) -> Result<Option<Block<H256>>, ConnectionError> {
+    self.adapter.get_block(block).wait().map_err(ConnectionError::Transport)
   }
 
   pub fn deploy(&self, bytes: &[u8]) -> Result<web3::contract::deploy::Builder<web3_adapter::Transports>, ethabi::Error> {
