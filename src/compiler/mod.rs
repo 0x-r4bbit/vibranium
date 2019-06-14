@@ -89,7 +89,12 @@ impl<'a> Compiler<'a> {
       .stdout(Stdio::piped())
       .stderr(Stdio::piped())
       .spawn()
-      .map_err(error::CompilerError::Io)
+      .map_err(|err| {
+        match err.kind() {
+          std::io::ErrorKind::NotFound => error::CompilerError::ExecutableNotFound(err, shell.to_owned()),
+          _ => error::CompilerError::Io(err)
+        }
+      })
   }
 }
 
