@@ -8,6 +8,7 @@ use crate::project_generator;
 #[derive(Debug)]
 pub enum CompilerError {
   Io(io::Error),
+  ExecutableNotFound(io::Error, String),
   VibraniumDirectoryNotFound(project_generator::error::ProjectGenerationError),
   InvalidConfig(config::error::ConfigError),
   UnsupportedStrategy,
@@ -18,6 +19,7 @@ impl Error for CompilerError {
   fn cause(&self) -> Option<&Error> {
     match self {
       CompilerError::Io(error) => Some(error),
+      CompilerError::ExecutableNotFound(error, _exec) => Some(error),
       CompilerError::VibraniumDirectoryNotFound(error) => Some(error),
       CompilerError::InvalidConfig(error) => Some(error),
       CompilerError::UnsupportedStrategy => None,
@@ -30,12 +32,8 @@ impl fmt::Display for CompilerError {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     let executable_not_found_message = "Couldn't find executable for requested compiler";
     match self {
-      CompilerError::Io(error) => {
-        match error.kind() {
-          io::ErrorKind::NotFound => write!(f, "{}", &executable_not_found_message),
-          _ => write!(f, "{}", error.description()),
-        }
-      },
+      CompilerError::Io(error) => write!(f, "{}", error.description()),
+      CompilerError::ExecutableNotFound(_error, exec) => write!(f, "Couldn't find executable for compiler {}", exec),
       CompilerError::VibraniumDirectoryNotFound(error) => write!(f, "{}", error.description()),
       CompilerError::InvalidConfig(error) => write!(f, "{}", error.description()),
       CompilerError::UnsupportedStrategy => write!(f, "Couldn't compile project without `CompilerConfig::compiler_options`. No built-in support for requested compiler."),
