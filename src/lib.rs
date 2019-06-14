@@ -5,6 +5,9 @@ extern crate log;
 extern crate glob;
 extern crate web3;
 extern crate ethabi;
+extern crate sha3;
+extern crate toml;
+extern crate toml_query;
 
 pub mod blockchain;
 pub mod project_generator;
@@ -112,9 +115,10 @@ impl Vibranium {
       })
   }
 
-  pub fn deploy(&self) -> Result<HashMap<String, (String, Address)>, deployment::error::DeploymentError> {
+  pub fn deploy(&self) -> Result<HashMap<String, (String, Address, bool)>, deployment::error::DeploymentError> {
     let (_eloop, connector) = self.get_blockchain_connector().map_err(deployment::error::DeploymentError::Connection)?;
-    let deployer = deployment::Deployer::new(&self.config, &connector);
+    let tracker = deployment::tracker::DeploymentTracker::new(&self.config);
+    let deployer = deployment::Deployer::new(&self.config, &connector, &tracker);
     deployer.deploy()
   }
 }

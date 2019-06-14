@@ -543,6 +543,7 @@ mod deploy_cmd {
       gas_price: None,
       tx_confirmations: None,
       smart_contracts: vec![],
+      tracking_enabled: None,
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
@@ -571,6 +572,7 @@ mod deploy_cmd {
       gas_limit: None,
       gas_price: None,
       tx_confirmations: None,
+      tracking_enabled: None,
       smart_contracts: vec![
         SmartContractConfig {
           name: contract_name.to_string(),
@@ -619,6 +621,7 @@ mod deploy_cmd {
       gas_limit: None,
       gas_price: None,
       tx_confirmations: None,
+      tracking_enabled: None,
       smart_contracts: vec![
         SmartContractConfig {
           name: contract_name.to_string(),
@@ -667,6 +670,7 @@ mod deploy_cmd {
       gas_limit: None,
       gas_price: None,
       tx_confirmations: None,
+      tracking_enabled: None,
       smart_contracts: vec![SmartContractConfig {
         name: contract_name.to_string(),
         args: None,
@@ -705,6 +709,7 @@ mod deploy_cmd {
       gas_limit: None,
       gas_price: None,
       tx_confirmations: None,
+      tracking_enabled: None,
       smart_contracts: vec![SmartContractConfig {
         name: contract_name.to_string(),
         args: None,
@@ -746,6 +751,7 @@ mod deploy_cmd {
       gas_limit: None,
       gas_price: None,
       tx_confirmations: None,
+      tracking_enabled: None,
       smart_contracts: vec![
         SmartContractConfig {
           name: contract_name.to_string(),
@@ -790,6 +796,7 @@ mod deploy_cmd {
       gas_limit: None,
       gas_price: None,
       tx_confirmations: None,
+      tracking_enabled: None,
       smart_contracts: vec![
         SmartContractConfig {
           name: contract_name.to_string(),
@@ -827,6 +834,108 @@ mod deploy_cmd {
         .arg(&project_path);
 
     cmd.assert().success();
+
+    tmp_dir.close()?;
+    Ok(())
+  }
+
+  #[test]
+  fn it_should_track_deployed_smart_contracts() -> Result<(), Box<std::error::Error>> {
+
+    let mut config = ProjectConfig::default();
+    let contract_name = "SimpleTestContract";
+
+    config.deployment = Some(ProjectDeploymentConfig {
+      gas_limit: None,
+      gas_price: None,
+      tx_confirmations: None,
+      tracking_enabled: None,
+      smart_contracts: vec![
+        SmartContractConfig {
+          name: contract_name.to_string(),
+          args: Some(vec![
+            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
+          ]),
+          gas_limit: None,
+          gas_price: None,
+        },
+      ],
+    });
+
+    let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
+    create_test_contract(&project_path, "simple_test_contract.sol")?;
+
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("compile")
+        .arg("--path")
+        .arg(&project_path);
+
+    cmd.assert().success();
+
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("deploy")
+        .arg("--path")
+        .arg(&project_path);
+
+    cmd.assert().success();
+
+    let tracking_file = project_path.join(".vibranium").join("tracking.toml");
+    assert_eq!(tracking_file.exists(), true);
+
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("deploy")
+        .arg("--path")
+        .arg(&project_path);
+
+    cmd.assert()
+       .success()
+       .stdout(predicate::str::contains("(skipped)"));
+
+    tmp_dir.close()?;
+    Ok(())
+  }
+
+  #[test]
+  fn it_should_not_track_deployment_when_tracking_is_turned_off() -> Result<(), Box<std::error::Error>> {
+    let mut config = ProjectConfig::default();
+    let contract_name = "SimpleTestContract";
+
+    config.deployment = Some(ProjectDeploymentConfig {
+      gas_limit: None,
+      gas_price: None,
+      tx_confirmations: None,
+      tracking_enabled: Some(false),
+      smart_contracts: vec![
+        SmartContractConfig {
+          name: contract_name.to_string(),
+          args: Some(vec![
+            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
+          ]),
+          gas_limit: None,
+          gas_price: None,
+        },
+      ],
+    });
+
+    let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
+    create_test_contract(&project_path, "simple_test_contract.sol")?;
+
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("compile")
+        .arg("--path")
+        .arg(&project_path);
+
+    cmd.assert().success();
+
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("deploy")
+        .arg("--path")
+        .arg(&project_path);
+
+    cmd.assert().success();
+
+    let tracking_file = project_path.join(".vibranium").join("tracking.toml");
+    assert_eq!(tracking_file.exists(), false);
 
     tmp_dir.close()?;
     Ok(())

@@ -1,5 +1,3 @@
-extern crate toml;
-extern crate toml_query;
 pub mod error;
 
 use crate::blockchain;
@@ -9,6 +7,7 @@ use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
 use std::default::Default;
+use toml;
 use toml_query::set::TomlValueSetExt;
 use toml_query::delete::TomlValueDeleteExt;
 use toml_query::insert::TomlValueInsertExt;
@@ -90,6 +89,7 @@ pub struct ProjectDeploymentConfig {
   pub tx_confirmations: Option<usize>,
   pub gas_price: Option<usize>,
   pub gas_limit: Option<usize>,
+  pub tracking_enabled: Option<bool>,
   pub smart_contracts: Vec<SmartContractConfig>,
 }
 

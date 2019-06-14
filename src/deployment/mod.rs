@@ -1,4 +1,5 @@
 pub mod error;
+pub mod tracker;
 
 use std::fs;
 use std::path::Path;
@@ -12,8 +13,9 @@ use blockchain::connector::{BlockchainConnector};
 use config::{Config, SmartContractArg};
 use web3::contract::Options;
 use web3::futures::Future;
-use web3::types::{U256, Address};
+use web3::types::{U256, H256, Address, BlockId, BlockNumber};
 use error::DeploymentError;
+use tracker::DeploymentTracker;
 
 const ARTIFACT_EXTENSION_BINARY: &str = "bin";
 const ARTIFACT_EXTENSION_ABI: &str = "abi";
@@ -23,22 +25,24 @@ const DEFAULT_DEV_TX_CONFIRMATION_AMOUNT: usize = 0;
 
 pub struct Deployer<'a> {
   config: &'a Config,
-  connector: &'a BlockchainConnector
+  connector: &'a BlockchainConnector,
+  tracker: &'a DeploymentTracker<'a>,
 }
 
 impl<'a> Deployer<'a> {
-  pub fn new(config: &'a Config, connector: &'a BlockchainConnector) -> Deployer<'a> {
+  pub fn new(config: &'a Config, connector: &'a BlockchainConnector, tracker: &'a DeploymentTracker) -> Deployer<'a> {
     Deployer {
       config,
-      connector
+      connector,
+      tracker,
     }
   }
 
-  pub fn deploy(&self) -> Result<HashMap<String, (String, Address)>, DeploymentError>  {
+  pub fn deploy(&self) -> Result<HashMap<String, (String, Address, bool)>, DeploymentError>  {
 
     let project_config = self.config.read().map_err(|err| DeploymentError::Other(err.to_string()))?;
 
-    if let None = &project_config.deployment {
+    if project_config.deployment.is_none() {
       return Err(DeploymentError::MissingConfig);
     }
 
@@ -53,6 +57,12 @@ impl<'a> Deployer<'a> {
 
     let confirmations = deployment_config.tx_confirmations.unwrap_or(DEFAULT_DEV_TX_CONFIRMATION_AMOUNT);
     let mut deployed_contracts = HashMap::new();
+
+    let tracking_enabled = deployment_config.tracking_enabled.unwrap_or(true);
+
+    if tracking_enabled && !self.tracker.database_exists() {
+      self.tracker.create_database().map_err(|err| DeploymentError::Other(err.to_string()))?;
+    }
 
     for smart_contract_config in &deployment_config.smart_contracts {
 
@@ -82,6 +92,17 @@ impl<'a> Deployer<'a> {
             None => vec![]
           };
 
+          if tracking_enabled {
+            let block_hash = self.get_first_block_hash().unwrap();
+            let tracked_contract = self.tracker.get_tracking_data(&block_hash, &smart_contract_config.name, &bytecode, &args).map_err(DeploymentError::TrackingError)?;
+
+            if let Some(tracked_contract) = tracked_contract {
+              info!("{} is already deployed at {}", &tracked_contract.name, &tracked_contract.address);
+              deployed_contracts.insert(file_bin_path.to_string_lossy().to_string(), (tracked_contract.name, tracked_contract.address, true));
+              continue;
+            }
+          }
+
           info!("Deploying {}...", &smart_contract_config.name);
 
           let builder = self.connector.deploy(&abi).map_err(|err| DeploymentError::Other(err.to_string()))?;
@@ -91,18 +112,33 @@ impl<'a> Deployer<'a> {
                                   opts.gas_price = smart_contract_config.gas_price.map(U256::from).or_else(|| Some(general_gas_price));
                                   opts.gas = smart_contract_config.gas_limit.map(U256::from).or_else(|| Some(general_gas_limit));
                                 }))
-                                .execute(bytecode, &*args, accounts[0])
+                                .execute(&bytecode, &*args, accounts[0])
                                 .map_err(|err| DeploymentError::InvalidConstructorArgs(err, smart_contract_config.name.to_owned()))?;
 
           let contract = pending_contract.wait().map_err(|err| DeploymentError::DeployContract(err, smart_contract_config.name.to_owned()))?;
 
+          if tracking_enabled {
+            self.tracker.track(
+              self.get_first_block_hash().unwrap(), 
+              smart_contract_config.name.to_owned(),
+              bytecode,
+              args,
+              contract.address(),
+            ).map_err(DeploymentError::TrackingError)?;
+          }
+
           info!("Deployed {} at {:?}", &smart_contract_config.name, &contract.address());
 
-          deployed_contracts.insert(file_bin_path.to_string_lossy().to_string(), (smart_contract_config.name.to_owned(), contract.address()));
+          deployed_contracts.insert(file_bin_path.to_string_lossy().to_string(), (smart_contract_config.name.to_owned(), contract.address(), false));
         }
       }
     }
     Ok(deployed_contracts)
+  }
+
+  fn get_first_block_hash(&self) -> Result<H256, DeploymentError> {
+    let block = self.connector.get_block(BlockId::Number(BlockNumber::Number(0))).map_err(DeploymentError::Connection)?.unwrap();
+    Ok(block.hash.unwrap())
   }
 }
 
