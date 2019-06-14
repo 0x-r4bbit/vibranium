@@ -295,11 +295,11 @@ fn run() -> Result<(), Error> {
           if contracts.is_empty() {
             println!("Nothing to deploy.");
           } else {
-            println!("");
+            println!();
             for (artifact, data) in contracts {
               println!("  {:?}: {} [Source: {}]", data.1, data.0, artifact);
             }
-            println!("");
+            println!();
             println!("Done.");
           }
           Ok(())

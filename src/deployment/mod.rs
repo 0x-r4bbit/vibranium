@@ -49,7 +49,7 @@ impl<'a> Deployer<'a> {
     let accounts = self.connector.accounts().map_err(DeploymentError::Connection)?;
 
     let general_gas_price = deployment_config.gas_price.map(U256::from).unwrap_or_else(|| self.connector.gas_price().ok().unwrap_or_else(|| U256::from(DEFAULT_GAS_PRICE)));
-    let general_gas_limit = deployment_config.gas_limit.map(U256::from).unwrap_or(U256::from(DEFAULT_GAS_LIMIT));
+    let general_gas_limit = deployment_config.gas_limit.map(U256::from).unwrap_or_else(|| U256::from(DEFAULT_GAS_LIMIT));
 
     let confirmations = deployment_config.tx_confirmations.unwrap_or(DEFAULT_DEV_TX_CONFIRMATION_AMOUNT);
     let mut deployed_contracts = HashMap::new();
@@ -88,8 +88,8 @@ impl<'a> Deployer<'a> {
 
           let pending_contract = builder.confirmations(confirmations)
                                 .options(Options::with(|opts| {
-                                  opts.gas_price = smart_contract_config.gas_price.map(U256::from).or(Some(general_gas_price));
-                                  opts.gas = smart_contract_config.gas_limit.map(U256::from).or(Some(general_gas_limit));
+                                  opts.gas_price = smart_contract_config.gas_price.map(U256::from).or_else(|| Some(general_gas_price));
+                                  opts.gas = smart_contract_config.gas_limit.map(U256::from).or_else(|| Some(general_gas_limit));
                                 }))
                                 .execute(bytecode, &*args, accounts[0])
                                 .map_err(|err| DeploymentError::InvalidConstructorArgs(err, smart_contract_config.name.to_owned()))?;
@@ -106,7 +106,7 @@ impl<'a> Deployer<'a> {
   }
 }
 
-fn tokenize_args(args: &Vec<SmartContractArg>) -> Result<Vec<Token>, DeploymentError> {
+fn tokenize_args(args: &[SmartContractArg]) -> Result<Vec<Token>, DeploymentError> {
   let mut tokenized_args: Vec<Token> = vec![];
 
   for arg in args {
