@@ -43,7 +43,7 @@ impl<'a> DeploymentTracker<'a> {
   }
 
   pub fn create_database(&self) -> Result<(), DeploymentTrackingError> {
-    let _ = fs::File::create(&self.get_tracking_file()).map_err(|err| DeploymentTrackingError::Other(err.to_string()))?;
+    let _ = fs::File::create(&self.get_tracking_file())?;
     Ok(())
   }
 
@@ -56,8 +56,8 @@ impl<'a> DeploymentTracker<'a> {
     let smart_contract_tracking_data = SmartContractTrackingData { name, address, };
 
     let mut tracking_data = self.try_from_tracking_file()?;
-    let chain_tracking_data = tracking_data.read(&block_hash).map_err(DeploymentTrackingError::Read)?;
-    let new_tracking_data = toml::Value::try_from(smart_contract_tracking_data).map_err(DeploymentTrackingError::Serialization)?;
+    let chain_tracking_data = tracking_data.read(&block_hash)?;
+    let new_tracking_data = toml::Value::try_from(smart_contract_tracking_data)?;
     
     match chain_tracking_data {
       None => tracking_data.insert(&query, new_tracking_data).map_err(DeploymentTrackingError::Insertion)?,
@@ -71,24 +71,24 @@ impl<'a> DeploymentTracker<'a> {
     let block_hash = create_block_hash(&block_hash);
     let smart_contract_hash = create_smart_contract_hash(&name, &byte_code, &args);
     let tracking_data = self.try_from_tracking_file()?;
-    let contract_data = tracking_data.read(&format!("{}.{}", &block_hash, &smart_contract_hash)).map_err(DeploymentTrackingError::Read)?;
+    let contract_data = tracking_data.read(&format!("{}.{}", &block_hash, &smart_contract_hash))?;
 
     if let Some(contract_data) = contract_data {
-      Ok(Some(contract_data.to_owned().try_into::<SmartContractTrackingData>().map_err(DeploymentTrackingError::Deserialization)?))
+      Ok(Some(contract_data.to_owned().try_into::<SmartContractTrackingData>()?))
     } else {
       Ok(None)
     }
   }
 
   fn write(&self, toml: toml::Value) -> Result<(), DeploymentTrackingError> {
-    let tracking_data = toml::to_string(&toml).map_err(DeploymentTrackingError::Serialization)?;
-    let mut tracking_file= fs::File::create(&self.get_tracking_file()).map_err(|err| DeploymentTrackingError::Other(err.to_string()))?;
+    let tracking_data = toml::to_string(&toml)?;
+    let mut tracking_file= fs::File::create(&self.get_tracking_file())?;
     tracking_file.write_all(tracking_data.as_bytes()).map_err(|err| DeploymentTrackingError::Other(err.to_string()))
   }
 
   fn try_from_tracking_file(&self) -> Result<toml::Value, DeploymentTrackingError> {
-    let tracking_data = fs::read_to_string(self.get_tracking_file()).map_err(|err| DeploymentTrackingError::Other(err.to_string()))?;
-    let toml: TrackingData = toml::from_str(&tracking_data).map_err(DeploymentTrackingError::Deserialization)?;
+    let tracking_data = fs::read_to_string(self.get_tracking_file())?;
+    let toml: TrackingData = toml::from_str(&tracking_data)?;
     toml::Value::try_from(toml).map_err(DeploymentTrackingError::Serialization)
   }
 

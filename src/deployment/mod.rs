@@ -40,7 +40,7 @@ impl<'a> Deployer<'a> {
 
   pub fn deploy(&self) -> Result<HashMap<String, (String, Address, bool)>, DeploymentError>  {
 
-    let project_config = self.config.read().map_err(|err| DeploymentError::Other(err.to_string()))?;
+    let project_config = self.config.read()?;
 
     if project_config.deployment.is_none() {
       return Err(DeploymentError::MissingConfig);
@@ -49,8 +49,8 @@ impl<'a> Deployer<'a> {
     let deployment_config = &project_config.deployment.unwrap();
 
     let artifacts_path = self.config.project_path.join(&project_config.sources.artifacts);
-    let mut artifacts_dir = std::fs::read_dir(&artifacts_path).map_err(|err| DeploymentError::Other(err.to_string()))?;
-    let accounts = self.connector.accounts().map_err(DeploymentError::Connection)?;
+    let mut artifacts_dir = std::fs::read_dir(&artifacts_path)?;
+    let accounts = self.connector.accounts()?;
 
     let general_gas_price = deployment_config.gas_price.map(U256::from).unwrap_or_else(|| self.connector.gas_price().ok().unwrap_or_else(|| U256::from(DEFAULT_GAS_PRICE)));
     let general_gas_limit = deployment_config.gas_limit.map(U256::from).unwrap_or_else(|| U256::from(DEFAULT_GAS_LIMIT));
@@ -61,7 +61,7 @@ impl<'a> Deployer<'a> {
     let tracking_enabled = deployment_config.tracking_enabled.unwrap_or(true);
 
     if tracking_enabled && !self.tracker.database_exists() {
-      self.tracker.create_database().map_err(|err| DeploymentError::Other(err.to_string()))?;
+      self.tracker.create_database()?;
     }
 
     for smart_contract_config in &deployment_config.smart_contracts {
@@ -69,7 +69,7 @@ impl<'a> Deployer<'a> {
       if let Some(artifact) = artifacts_dir.find(|entry| {
         entry.as_ref().unwrap().path().to_string_lossy().to_string().contains(&smart_contract_config.name)
       }) {
-        let artifact = artifact.map_err(|err| DeploymentError::Other(err.to_string()))?;
+        let artifact = artifact?;
         let file_path = artifact.path();
         let file_extension = &file_path.extension().unwrap().to_str().unwrap();
 
@@ -94,7 +94,7 @@ impl<'a> Deployer<'a> {
 
           if tracking_enabled {
             let block_hash = self.get_first_block_hash().unwrap();
-            let tracked_contract = self.tracker.get_tracking_data(&block_hash, &smart_contract_config.name, &bytecode, &args).map_err(DeploymentError::TrackingError)?;
+            let tracked_contract = self.tracker.get_tracking_data(&block_hash, &smart_contract_config.name, &bytecode, &args)?;
 
             if let Some(tracked_contract) = tracked_contract {
               info!("{} is already deployed at {}", &tracked_contract.name, &tracked_contract.address);
@@ -105,7 +105,7 @@ impl<'a> Deployer<'a> {
 
           info!("Deploying {}...", &smart_contract_config.name);
 
-          let builder = self.connector.deploy(&abi).map_err(|err| DeploymentError::Other(err.to_string()))?;
+          let builder = self.connector.deploy(&abi)?;
 
           let pending_contract = builder.confirmations(confirmations)
                                 .options(Options::with(|opts| {
@@ -124,11 +124,10 @@ impl<'a> Deployer<'a> {
               bytecode,
               args,
               contract.address(),
-            ).map_err(DeploymentError::TrackingError)?;
+            )?;
           }
 
           info!("Deployed {} at {:?}", &smart_contract_config.name, &contract.address());
-
           deployed_contracts.insert(file_bin_path.to_string_lossy().to_string(), (smart_contract_config.name.to_owned(), contract.address(), false));
         }
       }
@@ -137,7 +136,7 @@ impl<'a> Deployer<'a> {
   }
 
   fn get_first_block_hash(&self) -> Result<H256, DeploymentError> {
-    let block = self.connector.get_block(BlockId::Number(BlockNumber::Number(0))).map_err(DeploymentError::Connection)?.unwrap();
+    let block = self.connector.get_block(BlockId::Number(BlockNumber::Number(0)))?.unwrap();
     Ok(block.hash.unwrap())
   }
 }

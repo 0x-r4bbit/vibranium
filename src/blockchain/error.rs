@@ -1,6 +1,8 @@
+use std::convert::From;
 use std::io;
 use std::fmt;
 use std::error::Error;
+use crate::config::error::ConfigError;
 
 #[derive(Debug)]
 pub enum NodeError {
@@ -31,6 +33,12 @@ impl fmt::Display for NodeError {
       NodeError::UnsupportedClient => write!(f, "No built-in support for request blockchain client. Please specify NodeConfig.client_options"),
       NodeError::Other(message) => write!(f, "{}", message),
     }
+  }
+}
+
+impl From<ConfigError> for NodeError {
+  fn from(error: ConfigError) -> Self {
+    NodeError::Other(error.to_string())
   }
 }
 

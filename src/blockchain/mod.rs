@@ -26,7 +26,7 @@ impl<'a> Node<'a> {
   }
 
   pub fn start(&self, config: NodeConfig) -> Result<Child, error::NodeError> {
-    let project_config = self.config.read().map_err(|error| error::NodeError::Other(error.to_string()))?;
+    let project_config = self.config.read()?;
 
     let client = config.client.unwrap_or_else(|| {
       match &project_config.blockchain {

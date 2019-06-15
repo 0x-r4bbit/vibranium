@@ -1,4 +1,5 @@
 use std::error::Error;
+use std::convert::From;
 use std::fmt;
 use std::io;
 
@@ -44,6 +45,15 @@ impl fmt::Display for CompilerError {
           write!(f, "{}", &message)
         }
       },
+    }
+  }
+}
+
+impl From<config::error::ConfigError> for CompilerError {
+  fn from(error: config::error::ConfigError) -> Self {
+    match error {
+      config::error::ConfigError::Deserialization(_) => CompilerError::InvalidConfig(error),
+      _ => CompilerError::Other(error.to_string()),
     }
   }
 }

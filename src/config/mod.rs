@@ -126,7 +126,7 @@ impl Config {
   }
 
   pub fn read(&self) -> Result<ProjectConfig, error::ConfigError> {
-    toml::from_str(&fs::read_to_string(&self.config_file).map_err(error::ConfigError::Io)?).map_err(error::ConfigError::Deserialization)
+    toml::from_str(&fs::read_to_string(&self.config_file)?).map_err(error::ConfigError::Deserialization)
   }
 
   pub fn write(&self, option: String, value: toml::Value) -> Result<(), error::ConfigError> {
@@ -144,10 +144,8 @@ impl Config {
     config.try_into::<ProjectConfig>()
       .map_err(error::ConfigError::Deserialization)
       .and_then(|cfg| {
-        let config_toml = toml::to_string(&cfg).map_err(error::ConfigError::Serialization)?;
-        let mut config_file = fs::File::create(&self.config_file)
-          .map_err(error::ConfigError::Io)?;
-
+        let config_toml = toml::to_string(&cfg)?;
+        let mut config_file = fs::File::create(&self.config_file)?;
         config_file.write_all(config_toml.as_bytes()).map_err(error::ConfigError::Io)
       })?;
 
@@ -178,10 +176,8 @@ impl Config {
     config.try_into::<ProjectConfig>()
       .map_err(error::ConfigError::Deserialization)
       .and_then(|cfg| {
-        let config_toml = toml::to_string(&cfg).map_err(error::ConfigError::Serialization)?;
-        let mut config_file = fs::File::create(&self.config_file)
-          .map_err(error::ConfigError::Io)?;
-
+        let config_toml = toml::to_string(&cfg)?;
+        let mut config_file = fs::File::create(&self.config_file)?;
         config_file.write_all(config_toml.as_bytes()).map_err(error::ConfigError::Io)
       })
   }

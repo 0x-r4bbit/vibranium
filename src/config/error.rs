@@ -1,4 +1,5 @@
 use std::error::Error;
+use std::convert::From;
 use std::fmt;
 use std::io;
 use toml;
@@ -37,5 +38,23 @@ impl fmt::Display for ConfigError {
       ConfigError::Io(error) => write!(f, "Couldn't access configuration file: {}", error),
       ConfigError::Other(message) => write!(f, "{}", message),
     }
+  }
+}
+
+impl From<io::Error> for ConfigError {
+  fn from(error: io::Error) -> Self {
+    ConfigError::Io(error)
+  }
+}
+
+impl From<toml::de::Error> for ConfigError {
+  fn from(error: toml::de::Error) -> Self {
+    ConfigError::Deserialization(error)
+  }
+}
+
+impl From<toml::ser::Error> for ConfigError {
+  fn from(error: toml::ser::Error) -> Self {
+    ConfigError::Serialization(error)
   }
 }
