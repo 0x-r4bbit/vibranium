@@ -25,7 +25,7 @@ impl<'a> Compiler<'a> {
   }
 
   pub fn compile(&self, config: CompilerConfig) -> Result<Child, error::CompilerError> {
-    let project_config = self.config.read().map_err(error::CompilerError::InvalidConfig)?;
+    let project_config = self.config.read()?;
     let artifacts_dir = self.config.project_path.join(&project_config.sources.artifacts);
 
     let compiler = config.compiler.unwrap_or_else(|| {

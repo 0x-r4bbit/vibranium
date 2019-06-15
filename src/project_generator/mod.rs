@@ -37,7 +37,7 @@ impl<'a> ProjectGenerator<'a> {
       directories_to_create.push(config::DEFAULT_ARTIFACTS_DIRECTORY.to_string());
       self.create_default_config_file()?;
     } else {
-      let existing_config = self.config.read().map_err(error::ProjectGenerationError::InvalidConfig)?;
+      let existing_config = self.config.read()?;
       directories_to_create.push(existing_config.sources.artifacts);
     }
 
@@ -45,7 +45,7 @@ impl<'a> ProjectGenerator<'a> {
       let path = project_path.join(directory);
       if !path.exists() {
         info!("Creating: {}", path.to_str().unwrap());
-        fs::create_dir_all(path).map_err(error::ProjectGenerationError::Io)?;
+        fs::create_dir_all(path)?;
       }
     }
     Ok(())
@@ -62,7 +62,7 @@ impl<'a> ProjectGenerator<'a> {
     }
 
     if self.config.exists() {
-      let existing_config = self.config.read().map_err(error::ProjectGenerationError::InvalidConfig)?;
+      let existing_config = self.config.read()?;
       if existing_config.sources.artifacts != config::DEFAULT_ARTIFACTS_DIRECTORY {
         let artifacts_dir = project_path.join(existing_config.sources.artifacts);
         info!("Removing: {}", &artifacts_dir.to_str().unwrap());
@@ -90,9 +90,9 @@ impl<'a> ProjectGenerator<'a> {
   fn create_default_config_file(&self) -> Result<(), error::ProjectGenerationError> {
     let config = config::ProjectConfig::default();
     info!("Creating: {}", &self.config.config_file.to_str().unwrap());
-    let config_toml = toml::to_string(&config).map_err(error::ProjectGenerationError::Serialization)?;
-    let mut config_file = fs::File::create(&self.config.config_file).map_err(error::ProjectGenerationError::Io)?;
-    config_file.write_all(config_toml.as_bytes()).map_err(error::ProjectGenerationError::Io)?;
+    let config_toml = toml::to_string(&config)?;
+    let mut config_file = fs::File::create(&self.config.config_file)?;
+    config_file.write_all(config_toml.as_bytes())?;
     Ok(())
   }
 }

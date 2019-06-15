@@ -1,9 +1,13 @@
 use std::error::Error;
+use std::convert::From;
 use std::fmt;
+use std::io;
 use toml;
 use toml_query;
+use ethabi;
 
 use crate::blockchain;
+use crate::config;
 
 #[derive(Debug)]
 pub enum DeploymentError {
@@ -56,6 +60,35 @@ impl fmt::Display for DeploymentError {
   }
 }
 
+impl From<io::Error> for DeploymentError {
+  fn from(error: io::Error) -> Self {
+    DeploymentError::Other(error.to_string())
+  }
+}
+
+impl From<config::error::ConfigError> for DeploymentError {
+  fn from(error: config::error::ConfigError) -> Self {
+    DeploymentError::Other(error.to_string())
+  }
+}
+
+impl From<blockchain::error::ConnectionError> for DeploymentError {
+  fn from(error: blockchain::error::ConnectionError) -> Self {
+    DeploymentError::Connection(error)
+  }
+}
+
+impl From<DeploymentTrackingError> for DeploymentError {
+  fn from(error: DeploymentTrackingError) -> Self {
+    DeploymentError::TrackingError(error)
+  }
+}
+
+impl From<ethabi::Error> for DeploymentError {
+  fn from(error: ethabi::Error) -> Self {
+    DeploymentError::Other(error.to_string())
+  }
+}
 
 #[derive(Debug)]
 pub enum DeploymentTrackingError {
@@ -93,5 +126,29 @@ impl fmt::Display for DeploymentTrackingError {
       DeploymentTrackingError::Set(error) => write!(f, "Couldn't set tracking data: {}", error),
       DeploymentTrackingError::Delete(error) => write!(f, "Couldn't delete tracking data: {}", error),
     }
+  }
+}
+
+impl From<io::Error> for DeploymentTrackingError {
+  fn from(error: io::Error) -> Self {
+    DeploymentTrackingError::Other(error.to_string())
+  }
+}
+
+impl From<toml::de::Error> for DeploymentTrackingError {
+  fn from(error: toml::de::Error) -> Self {
+    DeploymentTrackingError::Deserialization(error)
+  }
+}
+
+impl From<toml::ser::Error> for DeploymentTrackingError {
+  fn from(error: toml::ser::Error) -> Self {
+    DeploymentTrackingError::Serialization(error)
+  }
+}
+
+impl From<toml_query::error::Error> for DeploymentTrackingError {
+  fn from(error: toml_query::error::Error) -> Self {
+    DeploymentTrackingError::Other(error.to_string())
   }
 }
