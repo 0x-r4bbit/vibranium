@@ -115,10 +115,10 @@ impl Vibranium {
       })
   }
 
-  pub fn deploy(&self) -> Result<HashMap<String, (String, Address, bool)>, deployment::error::DeploymentError> {
+  pub fn deploy(&self, options: deployment::DeployOptions) -> Result<HashMap<String, (String, Address, bool)>, deployment::error::DeploymentError> {
     let (_eloop, connector) = self.get_blockchain_connector().map_err(deployment::error::DeploymentError::Connection)?;
     let tracker = deployment::tracker::DeploymentTracker::new(&self.config);
     let deployer = deployment::Deployer::new(&self.config, &connector, &tracker);
-    deployer.deploy()
+    deployer.deploy(options)
   }
 }

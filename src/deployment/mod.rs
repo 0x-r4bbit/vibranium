@@ -23,6 +23,10 @@ const DEFAULT_GAS_PRICE: usize = 5;
 const DEFAULT_GAS_LIMIT: usize = 2_000_000;
 const DEFAULT_DEV_TX_CONFIRMATION_AMOUNT: usize = 0;
 
+pub struct DeployOptions {
+  pub tracking_enabled: Option<bool>,
+}
+
 pub struct Deployer<'a> {
   config: &'a Config,
   connector: &'a BlockchainConnector,
@@ -38,7 +42,7 @@ impl<'a> Deployer<'a> {
     }
   }
 
-  pub fn deploy(&self) -> Result<HashMap<String, (String, Address, bool)>, DeploymentError>  {
+  pub fn deploy(&self, options: DeployOptions) -> Result<HashMap<String, (String, Address, bool)>, DeploymentError>  {
 
     let project_config = self.config.read()?;
 
@@ -58,7 +62,8 @@ impl<'a> Deployer<'a> {
     let confirmations = deployment_config.tx_confirmations.unwrap_or(DEFAULT_DEV_TX_CONFIRMATION_AMOUNT);
     let mut deployed_contracts = HashMap::new();
 
-    let tracking_enabled = deployment_config.tracking_enabled.unwrap_or(true);
+    let tracking_enabled = options.tracking_enabled
+      .unwrap_or(deployment_config.tracking_enabled.unwrap_or(true));
 
     if tracking_enabled && !self.tracker.database_exists() {
       self.tracker.create_database()?;
