@@ -16,6 +16,7 @@ use clap::{App, SubCommand, Arg};
 use vibranium::Vibranium;
 use vibranium::blockchain;
 use vibranium::deployment;
+use vibranium::deployment::DeployOptions;
 use vibranium::compiler::CompilerConfig;
 use vibranium::project_generator::ResetOptions;
 
@@ -155,6 +156,10 @@ fn run() -> Result<(), Error> {
                       .value_name("PATH")
                       .help("Specifies path to Vibranium project")
                       .takes_value(true))
+                    .arg(Arg::with_name("no-tracking")
+                      .short("nt")
+                      .long("no-tracking")
+                      .help("Specifices whether deployment tracking should be disabled"))
                     .arg(Arg::with_name("verbose")
                       .short("v")
                       .long("verbose")
@@ -284,7 +289,16 @@ fn run() -> Result<(), Error> {
       println!("Deploying...");
       let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
       let vibranium = Vibranium::new(path);
-      vibranium.deploy()
+
+      let deploy_options = DeployOptions {
+        tracking_enabled: if cmd.is_present("no-tracking") {
+          Some(false)
+        } else {
+          None
+        }
+      };
+
+      vibranium.deploy(deploy_options)
         .map_err(|err| {
           match err {
             deployment::error::DeploymentError::Connection(connector_error) => error::CliError::BlockchainConnectorError(connector_error),
