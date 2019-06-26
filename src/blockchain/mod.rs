@@ -1,4 +1,5 @@
 use std::process::{Command, Child};
+use std::path::PathBuf;
 
 use crate::config;
 use crate::utils;
@@ -39,11 +40,11 @@ impl<'a> Node<'a> {
       Some(options) => {
         match client.parse() {
           Ok(SupportedBlockchainClients::Parity) => utils::merge_cli_options(
-            support::default_options_from(SupportedBlockchainClients::Parity),
+            support::default_options_from(SupportedBlockchainClients::Parity, &self.config.vibranium_dir_path),
             options.to_vec()
           ),
           Ok(SupportedBlockchainClients::Geth) => utils::merge_cli_options(
-            support::default_options_from(SupportedBlockchainClients::Geth),
+            support::default_options_from(SupportedBlockchainClients::Geth, &self.config.vibranium_dir_path),
             options.to_vec()
           ),
           Err(_err) => options.to_vec(),
@@ -51,8 +52,8 @@ impl<'a> Node<'a> {
       }
       None => {
         match project_config.blockchain {
-          Some(config) => config.options.unwrap_or_else(|| try_default_options_from(&client)),
-          None => try_default_options_from(&client)
+          Some(config) => config.options.unwrap_or_else(|| try_default_options_from(&client, &self.config.vibranium_dir_path)),
+          None => try_default_options_from(&client, &self.config.vibranium_dir_path)
         }
       }
     };
@@ -73,10 +74,10 @@ impl<'a> Node<'a> {
 }
 
 
-fn try_default_options_from(client: &str) -> Vec<String> {
+fn try_default_options_from(client: &str, vibranium_dir_path: &PathBuf) -> Vec<String> {
   match client.parse() {
-    Ok(SupportedBlockchainClients::Parity) => support::default_options_from(SupportedBlockchainClients::Parity),
-    Ok(SupportedBlockchainClients::Geth) => support::default_options_from(SupportedBlockchainClients::Geth),
+    Ok(SupportedBlockchainClients::Parity) => support::default_options_from(SupportedBlockchainClients::Parity, vibranium_dir_path),
+    Ok(SupportedBlockchainClients::Geth) => support::default_options_from(SupportedBlockchainClients::Geth, vibranium_dir_path),
     Err(_err) => vec![],
   }
 }

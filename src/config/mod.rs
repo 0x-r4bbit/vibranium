@@ -2,6 +2,7 @@ pub mod error;
 
 use crate::blockchain;
 use crate::compiler;
+use crate::project_generator;
 
 use std::fs;
 use std::io::Write;
@@ -13,6 +14,7 @@ use toml_query::delete::TomlValueDeleteExt;
 use toml_query::insert::TomlValueInsertExt;
 use toml_query::error::Error::IdentifierNotFoundInDocument;
 use blockchain::connector::BlockchainConnectorConfig;
+use project_generator::VIBRANIUM_PROJECT_DIRECTORY;
 
 pub const VIBRANIUM_CONFIG_FILE: &str = "vibranium.toml";
 pub const DEFAULT_ARTIFACTS_DIRECTORY: &str = "artifacts";
@@ -63,7 +65,7 @@ impl Default for ProjectBlockchainConfig {
   fn default() -> Self {
     ProjectBlockchainConfig {
       cmd: Some(blockchain::support::SupportedBlockchainClients::Parity.to_string()),
-      options: Some(blockchain::support::default_options_from(blockchain::support::SupportedBlockchainClients::Parity)),
+      options: None,
       connector: Some(blockchain::connector::BlockchainConnectorConfig::default()),
     }
   }
@@ -110,6 +112,7 @@ pub struct SmartContractArg {
 #[derive(Default, Debug)]
 pub struct Config {
   pub project_path: PathBuf,
+  pub vibranium_dir_path: PathBuf,
   pub config_file: PathBuf,
 }
 
@@ -117,6 +120,7 @@ impl Config {
   pub fn new(path: PathBuf) -> Config {
     Config {
       project_path: path.clone(),
+      vibranium_dir_path: path.clone().join(VIBRANIUM_PROJECT_DIRECTORY),
       config_file: path.join(VIBRANIUM_CONFIG_FILE)
     }
   }

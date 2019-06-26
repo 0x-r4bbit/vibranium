@@ -10,6 +10,8 @@ use crate::config;
 pub mod error;
 
 pub const VIBRANIUM_PROJECT_DIRECTORY: &str = ".vibranium";
+pub const DEFAULT_DATADIR_NAME: &str = "datadir";
+pub const DEFAULT_DATADIR_ENVIRONMENT: &str = "development";
 
 pub struct ProjectGenerator<'a> {
   config: &'a config::Config,
@@ -31,18 +33,21 @@ impl<'a> ProjectGenerator<'a> {
       return Err(error::ProjectGenerationError::ProjectPathNotFound);
     }
 
-    let mut directories_to_create: Vec<String> = vec![VIBRANIUM_PROJECT_DIRECTORY.to_string(), config::DEFAULT_CONTRACTS_DIRECTORY.to_string()];
+    let mut directories_to_create: Vec<PathBuf> = vec![
+      project_path.join(VIBRANIUM_PROJECT_DIRECTORY),
+      project_path.join(VIBRANIUM_PROJECT_DIRECTORY).join(DEFAULT_DATADIR_NAME).join(DEFAULT_DATADIR_ENVIRONMENT),
+      project_path.join(config::DEFAULT_CONTRACTS_DIRECTORY),
+    ];
 
     if !self.config.exists() {
-      directories_to_create.push(config::DEFAULT_ARTIFACTS_DIRECTORY.to_string());
+      directories_to_create.push(project_path.join(config::DEFAULT_ARTIFACTS_DIRECTORY));
       self.create_default_config_file()?;
     } else {
       let existing_config = self.config.read()?;
-      directories_to_create.push(existing_config.sources.artifacts);
+      directories_to_create.push(project_path.join(existing_config.sources.artifacts));
     }
 
-    for directory in directories_to_create {
-      let path = project_path.join(directory);
+    for path in directories_to_create {
       if !path.exists() {
         info!("Creating: {}", path.to_str().unwrap());
         fs::create_dir_all(path)?;
@@ -53,7 +58,7 @@ impl<'a> ProjectGenerator<'a> {
 
   pub fn reset_project(&self, project_path: &PathBuf, options: ResetOptions) -> Result<(), error::ProjectGenerationError> {
     self.check_vibranium_dir_exists()?;
-    let vibranium_project_directory = project_path.join(VIBRANIUM_PROJECT_DIRECTORY);
+    let vibranium_project_directory = self.config.vibranium_dir_path.clone();
     let default_artifacts_directory = project_path.join(config::DEFAULT_ARTIFACTS_DIRECTORY);
 
     if options.restore_config {
@@ -79,9 +84,7 @@ impl<'a> ProjectGenerator<'a> {
   }
 
   pub fn check_vibranium_dir_exists(&self) -> Result<(), error::ProjectGenerationError> {
-    let vibranium_project_directory = self.config.project_path.join(VIBRANIUM_PROJECT_DIRECTORY);
-
-    if !vibranium_project_directory.exists() {
+    if !self.config.vibranium_dir_path.exists() {
       return Err(error::ProjectGenerationError::VibraniumDirectoryNotFound);
     }
     Ok(())

@@ -119,11 +119,10 @@ mod init_cmd {
     assert_eq!(&compiler_options[2], "--overwrite");
 
     let blockchain_config = config.blockchain.unwrap();
-    let blockchain_options = blockchain_config.options.unwrap();
+    let blockchain_options = blockchain_config.options;
 
     assert_eq!(&blockchain_config.cmd.unwrap(), "parity");
-    assert_eq!(&blockchain_options[0], "--config");
-    assert_eq!(&blockchain_options[1], "dev");
+    assert_eq!(blockchain_options.is_none(), true);
 
     tmp_dir.close()?;
     Ok(())
@@ -176,7 +175,8 @@ mod reset_cmd {
     File::create(artifacts_dir.join("file1"))?;
     File::create(artifacts_dir.join("file2"))?;
 
-    assert_eq!(fs::read_dir(&vibranium_dir).unwrap().count(), 2);
+    // `vibranium_dir` now includes `datadir` by default
+    assert_eq!(fs::read_dir(&vibranium_dir).unwrap().count(), 3);
     assert_eq!(fs::read_dir(&artifacts_dir).unwrap().count(), 2);
 
     let mut cmd = Command::main_binary()?;
@@ -185,7 +185,8 @@ mod reset_cmd {
         .arg(&project_path);
     cmd.assert().success();
 
-    assert_eq!(fs::read_dir(&vibranium_dir).unwrap().count(), 0);
+    // `vibranium_dir` now includes `datadir` by default
+    assert_eq!(fs::read_dir(&vibranium_dir).unwrap().count(), 1);
     assert_eq!(fs::read_dir(&artifacts_dir).unwrap().count(), 0);
     
     tmp_dir.close()?;
