@@ -31,8 +31,8 @@ impl<'a> Node<'a> {
 
     let client = config.client.unwrap_or_else(|| {
       match &project_config.blockchain {
-        Some(config) => config.cmd.clone().unwrap_or_else(|| SupportedBlockchainClients::Parity.to_string()),
-        None => SupportedBlockchainClients::Parity.to_string(),
+        Some(config) => config.cmd.clone().unwrap_or_else(|| SupportedBlockchainClients::Parity.executable()),
+        None => SupportedBlockchainClients::Parity.executable(),
       }
     });
 
@@ -45,6 +45,10 @@ impl<'a> Node<'a> {
           ),
           Ok(SupportedBlockchainClients::Geth) => utils::merge_cli_options(
             support::default_options_from(SupportedBlockchainClients::Geth, &self.config.vibranium_dir_path),
+            options.to_vec()
+          ),
+          Ok(SupportedBlockchainClients::Ganache) => utils::merge_cli_options(
+            support::default_options_from(SupportedBlockchainClients::Ganache, &self.config.vibranium_dir_path),
             options.to_vec()
           ),
           Err(_err) => options.to_vec(),
@@ -78,6 +82,7 @@ fn try_default_options_from(client: &str, vibranium_dir_path: &PathBuf) -> Vec<S
   match client.parse() {
     Ok(SupportedBlockchainClients::Parity) => support::default_options_from(SupportedBlockchainClients::Parity, vibranium_dir_path),
     Ok(SupportedBlockchainClients::Geth) => support::default_options_from(SupportedBlockchainClients::Geth, vibranium_dir_path),
+    Ok(SupportedBlockchainClients::Ganache) => support::default_options_from(SupportedBlockchainClients::Ganache, vibranium_dir_path),
     Err(_err) => vec![],
   }
 }
