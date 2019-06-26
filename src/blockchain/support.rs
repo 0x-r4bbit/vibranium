@@ -1,9 +1,12 @@
 use super::error;
+use std::path::PathBuf;
 use std::str::FromStr;
 use std::string::ToString;
 
 const PARITY_CLIENT_CMD: &str = "parity";
 const GETH_CLIENT_CMD: &str = "geth";
+const DEFAULT_DATADIR_NAME: &str = "datadir";
+const DEFAULT_DATADIR_ENVIRONMENT: &str = "development";
 
 pub enum SupportedBlockchainClients {
   Parity,
@@ -30,14 +33,20 @@ impl ToString for SupportedBlockchainClients {
   }
 }
 
-pub fn default_options_from(client: SupportedBlockchainClients) -> Vec<String> {
+pub fn default_options_from(client: SupportedBlockchainClients, vibranium_dir_path: &PathBuf) -> Vec<String> {
   match client {
     SupportedBlockchainClients::Parity => {
       vec![
         "--config".to_string(),
         "dev".to_string(),
         "--ws-origins".to_string(),
-        "all".to_string()
+        "all".to_string(),
+        "--base-path".to_string(),
+        vibranium_dir_path
+          .join(DEFAULT_DATADIR_NAME)
+          .join(DEFAULT_DATADIR_ENVIRONMENT)
+          .to_string_lossy()
+          .to_string(),
       ]
     },
     SupportedBlockchainClients::Geth => {
@@ -46,7 +55,13 @@ pub fn default_options_from(client: SupportedBlockchainClients) -> Vec<String> {
         "--rpc".to_string(),
         "--ws".to_string(),
         "--wsorigins".to_string(),
-        "*".to_string()
+        "*".to_string(),
+        "--datadir".to_string(),
+        vibranium_dir_path
+          .join(DEFAULT_DATADIR_NAME)
+          .join(DEFAULT_DATADIR_ENVIRONMENT)
+          .to_string_lossy()
+          .to_string(),
       ]
     },
   }
