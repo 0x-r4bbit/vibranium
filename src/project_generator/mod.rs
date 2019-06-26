@@ -11,7 +11,8 @@ pub mod error;
 
 pub const VIBRANIUM_PROJECT_DIRECTORY: &str = ".vibranium";
 pub const DEFAULT_DATADIR_NAME: &str = "datadir";
-pub const DEFAULT_DATADIR_ENVIRONMENT: &str = "development";
+pub const DEFAULT_DEV_PASSWORDS_DIR: &str = "passwords";
+pub const DEFAULT_ENVIRONMENT: &str = "development";
 
 pub struct ProjectGenerator<'a> {
   config: &'a config::Config,
@@ -35,7 +36,8 @@ impl<'a> ProjectGenerator<'a> {
 
     let mut directories_to_create: Vec<PathBuf> = vec![
       project_path.join(VIBRANIUM_PROJECT_DIRECTORY),
-      project_path.join(VIBRANIUM_PROJECT_DIRECTORY).join(DEFAULT_DATADIR_NAME).join(DEFAULT_DATADIR_ENVIRONMENT),
+      project_path.join(VIBRANIUM_PROJECT_DIRECTORY).join(DEFAULT_DATADIR_NAME).join(DEFAULT_ENVIRONMENT),
+      project_path.join(VIBRANIUM_PROJECT_DIRECTORY).join(DEFAULT_DEV_PASSWORDS_DIR),
       project_path.join(config::DEFAULT_CONTRACTS_DIRECTORY),
     ];
 

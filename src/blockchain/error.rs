@@ -42,6 +42,12 @@ impl From<ConfigError> for NodeError {
   }
 }
 
+impl From<io::Error> for NodeError {
+  fn from(error: io::Error) -> Self {
+    NodeError::Other(error.to_string())
+  }
+}
+
 #[derive(Debug)]
 pub enum ConnectionError {
   UnsupportedProtocol,

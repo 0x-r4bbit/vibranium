@@ -68,6 +68,8 @@ impl<'a> Node<'a> {
       }
     }
 
+    support::init_node(&client, &client_options, &self.config.vibranium_dir_path)?;
+
     info!("Starting node with command: {} {}", &client, client_options.join(" "));
 
     Command::new(client)

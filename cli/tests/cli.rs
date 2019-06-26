@@ -170,13 +170,9 @@ mod reset_cmd {
     assert_eq!(vibranium_dir.exists(), true);
     assert_eq!(artifacts_dir.exists(), true);
 
-    File::create(vibranium_dir.join("file1"))?;
-    File::create(vibranium_dir.join("file2"))?;
     File::create(artifacts_dir.join("file1"))?;
     File::create(artifacts_dir.join("file2"))?;
 
-    // `vibranium_dir` now includes `datadir` by default
-    assert_eq!(fs::read_dir(&vibranium_dir).unwrap().count(), 3);
     assert_eq!(fs::read_dir(&artifacts_dir).unwrap().count(), 2);
 
     let mut cmd = Command::main_binary()?;
@@ -185,8 +181,6 @@ mod reset_cmd {
         .arg(&project_path);
     cmd.assert().success();
 
-    // `vibranium_dir` now includes `datadir` by default
-    assert_eq!(fs::read_dir(&vibranium_dir).unwrap().count(), 1);
     assert_eq!(fs::read_dir(&artifacts_dir).unwrap().count(), 0);
     
     tmp_dir.close()?;
