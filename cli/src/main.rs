@@ -164,7 +164,17 @@ fn run() -> Result<(), Error> {
                       .short("v")
                       .long("verbose")
                       .help("Generates verbose output"))
+                  )
+                  .subcommand(SubCommand::with_name("list")
+                    .about("List deployed application data")
+                    .arg(Arg::with_name("path")
+                      .short("p")
+                      .long("path")
+                      .value_name("PATH")
+                      .help("Specifies path to Vibranium project")
+                      .takes_value(true))
                   );
+                    
 
   let matches = app.clone().get_matches();
 
@@ -322,6 +332,22 @@ fn run() -> Result<(), Error> {
           }
           Ok(())
         })?
+    },
+
+    ("list", Some(cmd)) => {
+      let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
+      let vibranium = Vibranium::new(path);
+      let tracking_data = vibranium.get_tracking_data().map_err(|err| error::CliError::Other(err.to_string()))?;
+
+      match tracking_data {
+        None => println!("No Smart Contract data for currently connected chain has been tracked."),
+        Some(data) => {
+          println!("Deployed Smart Contracts:");
+          for (_hash, smart_contract) in data {
+            println!("  {:?}: {}", smart_contract.address, smart_contract.name);
+          }
+        }
+      }
     },
 
     _ => {

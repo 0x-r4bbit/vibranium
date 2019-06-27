@@ -13,7 +13,7 @@ use blockchain::connector::{BlockchainConnector};
 use config::{Config, SmartContractArg};
 use web3::contract::Options;
 use web3::futures::Future;
-use web3::types::{U256, H256, Address, BlockId, BlockNumber};
+use web3::types::{U256, H256, Address};
 use error::DeploymentError;
 use tracker::DeploymentTracker;
 
@@ -99,7 +99,7 @@ impl<'a> Deployer<'a> {
 
           if tracking_enabled {
             let block_hash = self.get_first_block_hash().unwrap();
-            let tracked_contract = self.tracker.get_tracking_data(&block_hash, &smart_contract_config.name, &bytecode, &args)?;
+            let tracked_contract = self.tracker.get_smart_contract_tracking_data(&block_hash, &smart_contract_config.name, &bytecode, &args)?;
 
             if let Some(tracked_contract) = tracked_contract {
               info!("{} is already deployed at {}", &tracked_contract.name, &tracked_contract.address);
@@ -141,7 +141,7 @@ impl<'a> Deployer<'a> {
   }
 
   fn get_first_block_hash(&self) -> Result<H256, DeploymentError> {
-    let block = self.connector.get_block(BlockId::Number(BlockNumber::Number(0)))?.unwrap();
+    let block = self.connector.get_first_block()?.unwrap();
     Ok(block.hash.unwrap())
   }
 }

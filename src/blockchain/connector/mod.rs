@@ -80,6 +80,10 @@ impl BlockchainConnector {
     self.adapter.get_block(block).wait().map_err(ConnectionError::Transport)
   }
 
+  pub fn get_first_block(&self) -> Result<Option<Block<H256>>, ConnectionError> {
+    self.get_block(BlockId::Number(BlockNumber::Number(0)))
+  }
+
   pub fn deploy(&self, bytes: &[u8]) -> Result<web3::contract::deploy::Builder<web3_adapter::Transports>, ethabi::Error> {
     self.adapter.deploy(bytes)
   }

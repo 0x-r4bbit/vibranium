@@ -17,12 +17,13 @@ use toml_query::set::TomlValueSetExt;
 use toml_query::read::TomlValueReadExt;
 use web3::types::{H256, Address};
 
-const TRACKING_FILE: &str = "tracking.toml";
+pub const TRACKING_FILE: &str = "tracking.toml";
 
-type TrackingData = HashMap<String, HashMap<String, SmartContractTrackingData>>;
+pub type SmartContractTrackingData = HashMap<String, SmartContractTrackingDataEntry>;
+type TrackingData = HashMap<String, SmartContractTrackingData>;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct SmartContractTrackingData {
+pub struct SmartContractTrackingDataEntry {
   pub name: String,
   pub address: Address,
 }
@@ -53,7 +54,7 @@ impl<'a> DeploymentTracker<'a> {
     let smart_contract_hash = create_smart_contract_hash(&name, &byte_code, &args);
     let query = format!("{}.{}", &block_hash, &smart_contract_hash);
 
-    let smart_contract_tracking_data = SmartContractTrackingData { name, address, };
+    let smart_contract_tracking_data = SmartContractTrackingDataEntry { name, address, };
 
     let mut tracking_data = self.try_from_tracking_file()?;
     let chain_tracking_data = tracking_data.read(&block_hash)?;
@@ -67,16 +68,31 @@ impl<'a> DeploymentTracker<'a> {
     self.write(tracking_data)
   }
 
-  pub fn get_tracking_data(&self, block_hash: &H256, name: &str, byte_code: &str, args: &[Token]) -> Result<Option<SmartContractTrackingData>, DeploymentTrackingError> {
+  pub fn get_smart_contract_tracking_data(&self, block_hash: &H256, name: &str, byte_code: &str, args: &[Token]) -> Result<Option<SmartContractTrackingDataEntry>, DeploymentTrackingError> {
     let block_hash = create_block_hash(&block_hash);
     let smart_contract_hash = create_smart_contract_hash(&name, &byte_code, &args);
     let tracking_data = self.try_from_tracking_file()?;
     let contract_data = tracking_data.read(&format!("{}.{}", &block_hash, &smart_contract_hash))?;
 
     if let Some(contract_data) = contract_data {
-      Ok(Some(contract_data.to_owned().try_into::<SmartContractTrackingData>()?))
+      Ok(Some(contract_data.to_owned().try_into::<SmartContractTrackingDataEntry>()?))
     } else {
       Ok(None)
+    }
+  }
+
+  pub fn get_all_smart_contract_tracking_data(&self, block_hash: &H256) -> Result<Option<SmartContractTrackingData>, DeploymentTrackingError> {
+    let block_hash = create_block_hash(&block_hash);
+    match self.try_from_tracking_file() {
+      Err(_) => Ok(None),
+      Ok(tracking_data) => {
+        let contract_data = tracking_data.read(&format!("{}", &block_hash))?;
+        if let Some(contract_data) = contract_data {
+          Ok(Some(contract_data.to_owned().try_into::<SmartContractTrackingData>()?))
+        } else {
+          Ok(None)
+        }
+      }
     }
   }
 
@@ -87,6 +103,9 @@ impl<'a> DeploymentTracker<'a> {
   }
 
   fn try_from_tracking_file(&self) -> Result<toml::Value, DeploymentTrackingError> {
+    if !self.database_exists() {
+      return Err(DeploymentTrackingError::DatabaseNotFound);
+    }
     let tracking_data = fs::read_to_string(self.get_tracking_file())?;
     let toml: TrackingData = toml::from_str(&tracking_data)?;
     toml::Value::try_from(toml).map_err(DeploymentTrackingError::Serialization)

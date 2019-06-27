@@ -6,6 +6,7 @@ use std::fs;
 use std::io::Write;
 
 use crate::config;
+use crate::deployment::tracker::TRACKING_FILE;
 
 pub mod error;
 
