@@ -21,6 +21,7 @@ pub struct ProjectGenerator<'a> {
 
 pub struct ResetOptions {
   pub restore_config: bool,
+  pub tracking_data_only: bool,
 }
 
 impl<'a> ProjectGenerator<'a> {
@@ -64,24 +65,30 @@ impl<'a> ProjectGenerator<'a> {
     let vibranium_project_directory = self.config.vibranium_dir_path.clone();
     let default_artifacts_directory = project_path.join(config::DEFAULT_ARTIFACTS_DIRECTORY);
 
-    if options.restore_config {
-      info!("Restoring project's config file");
-      self.create_default_config_file()?;
-    }
-
-    if self.config.exists() {
-      let existing_config = self.config.read()?;
-      if existing_config.sources.artifacts != config::DEFAULT_ARTIFACTS_DIRECTORY {
-        let artifacts_dir = project_path.join(existing_config.sources.artifacts);
-        info!("Removing: {}", &artifacts_dir.to_str().unwrap());
-        let _ = fs::remove_dir_all(&artifacts_dir);
+    if options.tracking_data_only {
+      let tracking_file = vibranium_project_directory.join(TRACKING_FILE);
+      info!("Removing: {}", &tracking_file.to_str().unwrap());
+      fs::remove_file(tracking_file)?;
+    } else {
+      if options.restore_config {
+        info!("Restoring project's config file");
+        self.create_default_config_file()?;
       }
-    }
 
-    info!("Removing: {}", &vibranium_project_directory.to_str().unwrap());
-    let _ = fs::remove_dir_all(vibranium_project_directory);
-    info!("Removing: {}", &default_artifacts_directory.to_str().unwrap());
-    let _ = fs::remove_dir_all(&default_artifacts_directory);
+      if self.config.exists() {
+        let existing_config = self.config.read()?;
+        if existing_config.sources.artifacts != config::DEFAULT_ARTIFACTS_DIRECTORY {
+          let artifacts_dir = project_path.join(existing_config.sources.artifacts);
+          info!("Removing: {}", &artifacts_dir.to_str().unwrap());
+          let _ = fs::remove_dir_all(&artifacts_dir);
+        }
+      }
+
+      info!("Removing: {}", &vibranium_project_directory.to_str().unwrap());
+      let _ = fs::remove_dir_all(vibranium_project_directory);
+      info!("Removing: {}", &default_artifacts_directory.to_str().unwrap());
+      let _ = fs::remove_dir_all(&default_artifacts_directory);
+    }
 
     Ok(())
   }

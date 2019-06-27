@@ -137,8 +137,14 @@ mod reset_cmd {
   use assert_cmd::prelude::*;
   use predicates::prelude::*;
   use tempfile::tempdir;
-  use vibranium::config::ProjectConfig;
+  use vibranium::config::{
+    ProjectConfig,
+    ProjectDeploymentConfig,
+    SmartContractConfig,
+    SmartContractArg
+  };
 
+  use super::create_test_contract;
   use super::setup_vibranium_project;
   use super::set_configuration;
   use super::set_configurations;
@@ -240,6 +246,65 @@ mod reset_cmd {
     assert_eq!(config.sources.smart_contracts, default_config.sources.smart_contracts);
     assert_eq!(config.compiler.unwrap().cmd, default_config.compiler.unwrap().cmd);
     assert_eq!(config.blockchain.unwrap().cmd, default_config.blockchain.unwrap().cmd);
+
+    tmp_dir.close()?;
+    Ok(())
+  }
+
+  #[test]
+  fn it_should_reset_only_tracking_data_if_flag_is_provided() -> Result<(), Box<std::error::Error>> {
+
+    let mut config = ProjectConfig::default();
+    let contract_name = "SimpleTestContract";
+
+    config.deployment = Some(ProjectDeploymentConfig {
+      gas_limit: None,
+      gas_price: None,
+      tx_confirmations: None,
+      tracking_enabled: None,
+      smart_contracts: vec![
+        SmartContractConfig {
+          name: contract_name.to_string(),
+          args: Some(vec![
+            SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
+          ]),
+          gas_limit: None,
+          gas_price: None,
+        },
+      ],
+    });
+
+    let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
+    create_test_contract(&project_path, "simple_test_contract.sol")?;
+
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("compile")
+        .arg("--path")
+        .arg(&project_path);
+
+    cmd.assert().success();
+
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("deploy")
+        .arg("--path")
+        .arg(&project_path);
+
+    cmd.assert().success();
+
+    let vibranium_dir = project_path.join(".vibranium");
+    let tracking_file = project_path.join(".vibranium").join("tracking.toml");
+    assert_eq!(tracking_file.exists(), true);
+
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("reset")
+        .arg("--path")
+        .arg(&project_path)
+        .arg("--tracking-data");
+
+    cmd.assert().success();
+
+    assert_eq!(vibranium_dir.exists(), true);
+    assert_eq!(tracking_file.exists(), false);
 
     tmp_dir.close()?;
     Ok(())
