@@ -86,6 +86,10 @@ fn run() -> Result<(), Error> {
                       .short("rc")
                       .long("restore-config")
                       .help("Flag to specify whether the project's vibranium.toml file should be reset to Vibranium's defaults"))
+                    .arg(Arg::with_name("tracking-data")
+                      .short("td")
+                      .long("tracking-data")
+                      .help("Flag to only reset tracking data if any exists"))
                     .arg(Arg::with_name("verbose")
                       .short("v")
                       .long("verbose")
@@ -219,7 +223,8 @@ fn run() -> Result<(), Error> {
       let vibranium = Vibranium::new(path);
 
       vibranium.reset_project(ResetOptions {
-        restore_config: cmd.is_present("restore-config")
+        restore_config: cmd.is_present("restore-config"),
+        tracking_data_only: cmd.is_present("tracking-data"),
       }).and_then(|_| {
         println!("Done.");
         Ok(())
