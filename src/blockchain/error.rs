@@ -3,6 +3,7 @@ use std::io;
 use std::fmt;
 use std::error::Error;
 use crate::config::error::ConfigError;
+use crate::deployment::error::DeploymentTrackingError;
 
 #[derive(Debug)]
 pub enum NodeError {
@@ -75,5 +76,11 @@ impl fmt::Display for ConnectionError {
       ConnectionError::Transport(error) => write!(f, "{}", error),
       ConnectionError::Other(message) => write!(f, "{}", message),
     }
+  }
+}
+
+impl From<DeploymentTrackingError> for ConnectionError {
+  fn from(error: DeploymentTrackingError) -> Self {
+    ConnectionError::Other(error.to_string())
   }
 }

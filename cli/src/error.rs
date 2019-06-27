@@ -11,6 +11,12 @@ use vibranium::blockchain::error::ConnectionError;
 use vibranium::deployment::error::DeploymentError;
 
 
+const ERROR_MESSAGE_CONNECTION_REFUSED: &str = "Unable to connect to blockchain. If you're trying to connect to a local blockchain node,
+make sure it's started first using the following command in a separate process:
+
+  $ vibranium node [--path ...]
+";
+
 #[derive(Debug)]
 pub enum CliError {
   CompilationError(CompilerError),
@@ -93,11 +99,7 @@ Make sure a blockchain connector configuration is provided in the project's vibr
             // to transform them to meaningful error messages.
             let error_message = error.to_string();
             if error_message.contains("Connection refused") {
-              write!(f, "Unable to connect to blockchain. If you're trying to connect to a local blockchain node,
-make sure it's started first using the following command in a separate process:
-
-  $ vibranium node [--path ...]
-")
+              write!(f, "{}", ERROR_MESSAGE_CONNECTION_REFUSED)
             } else if error_message.contains("invalid response") || error_message.contains("405 Method Not Allowed") {
               write!(f, "Unexpected blockchain client response. This is because of either a bad reponse from the blockchain client,
 or a wrong configuration of the blockchain connector (e.g. wrong port)")
@@ -124,7 +126,14 @@ Make sure a deployment configuration is provided in the project's vibranium.toml
           _ => write!(f, "{}", error)
         }
       },
-      CliError::Other(message) => write!(f, "{}", message),
+      CliError::Other(message) => {
+
+        if message.contains("Connection refused") {
+          write!(f, "{}", ERROR_MESSAGE_CONNECTION_REFUSED)
+        } else {
+          write!(f, "{}", message)
+        }
+      },
     }
   }
 }

@@ -121,4 +121,12 @@ impl Vibranium {
     let deployer = deployment::Deployer::new(&self.config, &connector, &tracker);
     deployer.deploy(options)
   }
+
+  pub fn get_tracking_data(&self) -> Result<Option<deployment::tracker::SmartContractTrackingData>, deployment::error::DeploymentTrackingError> {
+    let (_eloop, connector) = self.get_blockchain_connector()?;
+    let tracker = deployment::tracker::DeploymentTracker::new(&self.config);
+    connector.get_first_block()
+      .map_err(|err| deployment::error::DeploymentTrackingError::Other(err.to_string()))
+      .and_then(|block| tracker.get_all_smart_contract_tracking_data(&block.unwrap().hash.unwrap()))
+  }
 }

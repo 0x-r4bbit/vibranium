@@ -93,6 +93,7 @@ impl From<ethabi::Error> for DeploymentError {
 #[derive(Debug)]
 pub enum DeploymentTrackingError {
   Other(String),
+  DatabaseNotFound,
   Deserialization(toml::de::Error),
   Serialization(toml::ser::Error),
   Insertion(toml_query::error::Error),
@@ -105,6 +106,7 @@ impl Error for DeploymentTrackingError {
   fn cause(&self) -> Option<&Error> {
     match self {
       DeploymentTrackingError::Other(_) => None,
+      DeploymentTrackingError::DatabaseNotFound => None,
       DeploymentTrackingError::Deserialization(error) => Some(error),
       DeploymentTrackingError::Serialization(error) => Some(error),
       DeploymentTrackingError::Insertion(_error) => None,
@@ -119,6 +121,7 @@ impl fmt::Display for DeploymentTrackingError {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
       DeploymentTrackingError::Other(message) => write!(f, "{}", message),
+      DeploymentTrackingError::DatabaseNotFound => write!(f, "Couldn't find tracking database"),
       DeploymentTrackingError::Deserialization(error) => write!(f, "Couldn't deserialize tracking data: {}", error),
       DeploymentTrackingError::Serialization(error) => write!(f, "Couldn't serialize tracking data: {}", error),
       DeploymentTrackingError::Insertion(error) => write!(f, "Couldn't insert tracking data before writing to disc: {}", error),
@@ -149,6 +152,12 @@ impl From<toml::ser::Error> for DeploymentTrackingError {
 
 impl From<toml_query::error::Error> for DeploymentTrackingError {
   fn from(error: toml_query::error::Error) -> Self {
+    DeploymentTrackingError::Other(error.to_string())
+  }
+}
+
+impl From<blockchain::error::ConnectionError> for DeploymentTrackingError {
+  fn from(error: blockchain::error::ConnectionError) -> Self {
     DeploymentTrackingError::Other(error.to_string())
   }
 }
