@@ -7,11 +7,11 @@ assignees: ''
 
 ---
 
-Which code could need some refactor love?
+**Which code could need some refactor love?**
 A clear and concise description of which part of the codebase could need a refactor and why.
 
-Describe the solution you'd like
+**Describe the solution you'd like**
 A clear and concise description of what the refactor could look like.
 
-Describe alternatives you've considered
+**Describe alternatives you've considered**
 A clear and concise description of any alternative solutions you've considered.
