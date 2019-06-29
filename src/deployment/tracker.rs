@@ -4,7 +4,6 @@ use crate::project_generator;
 use super::error::DeploymentTrackingError;
 
 use config::Config;
-use ethabi::Token;
 use project_generator::VIBRANIUM_PROJECT_DIRECTORY;
 use std::io::Write;
 use std::path::PathBuf;
@@ -48,7 +47,7 @@ impl<'a> DeploymentTracker<'a> {
     Ok(())
   }
 
-  pub fn track(&self, block_hash: H256, name: String, byte_code: String, args: Vec<Token>, address: Address) -> Result<(), DeploymentTrackingError> {
+  pub fn track(&self, block_hash: H256, name: String, byte_code: String, args: &Vec<String>, address: Address) -> Result<(), DeploymentTrackingError> {
 
     let block_hash = create_block_hash(&block_hash);
     let smart_contract_hash = create_smart_contract_hash(&name, &byte_code, &args);
@@ -68,7 +67,7 @@ impl<'a> DeploymentTracker<'a> {
     self.write(tracking_data)
   }
 
-  pub fn get_smart_contract_tracking_data(&self, block_hash: &H256, name: &str, byte_code: &str, args: &[Token]) -> Result<Option<SmartContractTrackingDataEntry>, DeploymentTrackingError> {
+  pub fn get_smart_contract_tracking_data(&self, block_hash: &H256, name: &str, byte_code: &str, args: &Vec<String>) -> Result<Option<SmartContractTrackingDataEntry>, DeploymentTrackingError> {
     let block_hash = create_block_hash(&block_hash);
     let smart_contract_hash = create_smart_contract_hash(&name, &byte_code, &args);
     let tracking_data = self.try_from_tracking_file()?;
@@ -121,12 +120,12 @@ fn create_block_hash(block_hash: &H256) -> String {
   format!("0x{:x}", Sha3_256::digest(block_hash.as_bytes()))
 }
 
-fn create_smart_contract_hash(name: &str, byte_code: &str, args: &[Token]) -> String {
+fn create_smart_contract_hash(name: &str, byte_code: &str, args: &Vec<String>) -> String {
   let mut hasher = Sha3_256::new();
 
   hasher.input(name.as_bytes());
   hasher.input(byte_code.as_bytes());
-  hasher.input(args.iter().map(std::string::ToString::to_string).collect::<String>().as_bytes());
+  hasher.input(args.join("").as_bytes());
 
   format!("0x{:x}", hasher.result())
 }
