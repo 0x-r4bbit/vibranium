@@ -1053,7 +1053,6 @@ mod deploy_cmd {
 mod list_cmd {
 
   use std::process::Command;
-  use std::fs::File;
   use assert_cmd::prelude::*;
   use predicates::prelude::*;
 

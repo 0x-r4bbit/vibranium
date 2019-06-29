@@ -1,21 +1,23 @@
 pub mod error;
 pub mod tracker;
 
+use blockchain::connector::{BlockchainConnector};
+use config::{Config, SmartContractConfig, SmartContractArg};
+use crate::blockchain;
+use crate::config;
+use error::DeploymentError;
+use ethabi::{Token, ParamType};
+use ethabi::param_type::Reader;
+use ethabi::token::{LenientTokenizer, Tokenizer};
+use petgraph::graphmap::DiGraphMap;
+use petgraph::algo::toposort;
 use std::fs;
 use std::path::Path;
 use std::collections::HashMap;
-use ethabi::{Token};
-use ethabi::param_type::Reader;
-use ethabi::token::{LenientTokenizer, Tokenizer};
-use crate::blockchain;
-use crate::config;
-use blockchain::connector::{BlockchainConnector};
-use config::{Config, SmartContractArg};
+use tracker::DeploymentTracker;
 use web3::contract::Options;
 use web3::futures::Future;
 use web3::types::{U256, H256, Address};
-use error::DeploymentError;
-use tracker::DeploymentTracker;
 
 const ARTIFACT_EXTENSION_BINARY: &str = "bin";
 const ARTIFACT_EXTENSION_ABI: &str = "abi";
@@ -69,7 +71,9 @@ impl<'a> Deployer<'a> {
       self.tracker.create_database()?;
     }
 
-    for smart_contract_config in &deployment_config.smart_contracts {
+    let sorted_smart_contract_configs = sort_by_dependencies(&deployment_config.smart_contracts)?;
+
+    for smart_contract_config in sorted_smart_contract_configs {
 
       if let Some(artifact) = artifacts_dir.find(|entry| {
         entry.as_ref().unwrap().path().to_string_lossy().to_string().contains(&smart_contract_config.name)
@@ -92,8 +96,10 @@ impl<'a> Deployer<'a> {
           let bytecode = fs::read_to_string(&file_bin_path).unwrap();
           let abi = fs::read(file_abi_path).unwrap();
 
-          let args = match &smart_contract_config.args {
-            Some(args) => tokenize_args(args)?,
+          let args = smart_contract_config.args.as_ref().unwrap_or(&vec![]).iter().map(|arg| arg.value.clone()).collect();
+
+          let tokenized_args = match &smart_contract_config.args {
+            Some(args) => tokenize_args(args, &deployed_contracts)?,
             None => vec![]
           };
 
@@ -102,7 +108,7 @@ impl<'a> Deployer<'a> {
             let tracked_contract = self.tracker.get_smart_contract_tracking_data(&block_hash, &smart_contract_config.name, &bytecode, &args)?;
 
             if let Some(tracked_contract) = tracked_contract {
-              info!("{} is already deployed at {}", &tracked_contract.name, &tracked_contract.address);
+              info!("{} is already deployed at {:?}", &tracked_contract.name, &tracked_contract.address);
               deployed_contracts.insert(file_bin_path.to_string_lossy().to_string(), (tracked_contract.name, tracked_contract.address, true));
               continue;
             }
@@ -117,7 +123,7 @@ impl<'a> Deployer<'a> {
                                   opts.gas_price = smart_contract_config.gas_price.map(U256::from).or_else(|| Some(general_gas_price));
                                   opts.gas = smart_contract_config.gas_limit.map(U256::from).or_else(|| Some(general_gas_limit));
                                 }))
-                                .execute(&bytecode, &*args, accounts[0])
+                                .execute(&bytecode, &*tokenized_args, accounts[0])
                                 .map_err(|err| DeploymentError::InvalidConstructorArgs(err, smart_contract_config.name.to_owned()))?;
 
           let contract = pending_contract.wait().map_err(|err| DeploymentError::DeployContract(err, smart_contract_config.name.to_owned()))?;
@@ -127,7 +133,7 @@ impl<'a> Deployer<'a> {
               self.get_first_block_hash().unwrap(), 
               smart_contract_config.name.to_owned(),
               bytecode,
-              args,
+              &args,
               contract.address(),
             )?;
           }
@@ -146,14 +152,151 @@ impl<'a> Deployer<'a> {
   }
 }
 
-fn tokenize_args(args: &[SmartContractArg]) -> Result<Vec<Token>, DeploymentError> {
+fn tokenize_args(args: &[SmartContractArg], deployed_contracts: &HashMap<String, (String, Address, bool)>) -> Result<Vec<Token>, DeploymentError> {
   let mut tokenized_args: Vec<Token> = vec![];
 
   for arg in args {
     let param_type = Reader::read(&arg.kind).map_err(DeploymentError::InvalidParamType)?;
-    let token = LenientTokenizer::tokenize(&param_type, &arg.value).map_err(|err| DeploymentError::TokenizeParam(err, arg.value.to_owned()))?;
+
+    let value = if ParamType::Address == param_type {
+      if arg.value.starts_with('$') {
+        let contract = deployed_contracts.values().find(|values| values.0 == arg.value[1..]).unwrap();
+        format!("{:?}", &contract.1)[2..].to_owned()
+      } else {
+        arg.value[2..].to_owned()
+      }
+    } else {
+      arg.value.to_owned()
+    };
+
+    let token = LenientTokenizer::tokenize(&param_type, &value).map_err(|err| DeploymentError::TokenizeParam(err, value.to_owned()))?;
     tokenized_args.push(token);
   }
 
   Ok(tokenized_args)
+}
+
+fn sort_by_dependencies(smart_contracts: &Vec<SmartContractConfig>) -> Result<Vec<&SmartContractConfig>, DeploymentError> {
+  let graph = DiGraphMap::<&str, ()>::from_edges(
+    smart_contracts.iter().filter(|contract| contract.args.is_some()).flat_map(|contract| {
+      contract.args.as_ref().unwrap().iter()
+        .filter(|dep| dep.value.starts_with("$") && dep.kind == "address")
+        .map(move |dep| (contract.name.as_str(), &dep.value[1..]))
+    })
+  ).into_graph::<u32>();
+
+  let sorted_names = toposort(&graph, None).map_err(|err| DeploymentError::CyclicDependency(graph[err.node_id()].to_string()))?;
+  let mut smart_contract_map = HashMap::new();
+
+  for smart_contract_config in smart_contracts.iter() {
+    smart_contract_map.insert(smart_contract_config.name.as_str(), smart_contract_config);
+  }
+  
+  let mut sorted_smart_contracts = vec![];
+
+  for i in sorted_names.into_iter() {
+    if smart_contract_map.get(graph[i]).is_none() {
+      return Err(DeploymentError::MissingConfigForReference(graph[i].to_owned()));
+    }
+    sorted_smart_contracts.push(smart_contract_map.remove(graph[i]).unwrap());
+  }
+
+  for (_name, config) in smart_contract_map {
+    sorted_smart_contracts.push(config);
+  }
+
+  Ok(sorted_smart_contracts.into_iter().rev().collect())
+}
+
+#[cfg(test)]
+mod tests {
+
+  mod sort_by_dependencies {
+
+    use super::super::sort_by_dependencies;
+    use crate::config::ProjectConfig;
+
+    fn project_config_from_string(config: &str) -> Result<ProjectConfig, toml::de::Error> {
+      toml::from_str(&config)
+    }
+
+    #[test]
+    fn it_should_fail_if_there_is_a_circular_dependency() {
+      let project_config = project_config_from_string("
+        [sources]
+          artifacts = \"artifacts\"
+          smart_contracts = [\"contracts/*.sol\"]
+        [[deployment.smart_contracts]]
+          name = \"Other\"
+          args = [
+            { value = \"$YetAnother\", kind = \"address\" }
+          ]
+        [[deployment.smart_contracts]]
+          name = \"YetAnother\"
+          args = [
+            { value = \"$Other\", kind = \"address\" }
+          ]
+      ").unwrap();
+
+      let smart_contracts = project_config.deployment.unwrap().smart_contracts;
+      assert_eq!(sort_by_dependencies(&smart_contracts).is_err(), true);
+    }
+
+    #[test]
+    fn it_should_fail_when_non_existing_smart_contract_is_referenced() {
+      let project_config = project_config_from_string("
+        [sources]
+          artifacts = \"artifacts\"
+          smart_contracts = [\"contracts/*.sol\"]
+        [[deployment.smart_contracts]]
+          name = \"A\"
+          args = [
+            { value = \"$B\", kind = \"address\" }
+          ]
+        [[deployment.smart_contracts]]
+          name = \"B\"
+          args = [
+            { value = \"$C\", kind = \"address\" }
+          ]
+      ").unwrap();
+
+      let smart_contracts = project_config.deployment.unwrap().smart_contracts;
+      assert_eq!(sort_by_dependencies(&smart_contracts).is_err(), true);
+    }
+
+    #[test]
+    fn it_should_sort_smart_contract_config_in_the_right_order() {
+      let project_config = project_config_from_string("
+        [sources]
+          artifacts = \"artifacts\"
+          smart_contracts = [\"contracts/*.sol\"]
+        [[deployment.smart_contracts]]
+          name = \"A\"
+          args = [
+            { value = \"$B\", kind = \"address\" },
+            { value = \"$C\", kind = \"address\" },
+            { value = \"$D\", kind = \"address\" },
+          ]
+        [[deployment.smart_contracts]]
+          name = \"B\"
+          args = [
+            { value = \"$D\", kind = \"address\" }
+          ]
+        [[deployment.smart_contracts]]
+          name = \"C\"
+          args = [
+            { value = \"$D\", kind = \"address\" }
+          ]
+        [[deployment.smart_contracts]]
+          name = \"D\"
+      ").unwrap();
+
+      let smart_contracts = project_config.deployment.unwrap().smart_contracts;
+
+      let sorted = sort_by_dependencies(&smart_contracts).unwrap();
+      let expected = vec!["D", "B", "C", "A"];
+
+      assert_eq!(sorted.iter().map(|contract| contract.name.as_str()).collect::<Vec<&str>>(), expected);
+    }
+  }
 }

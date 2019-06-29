@@ -5,6 +5,7 @@ extern crate log;
 extern crate glob;
 extern crate web3;
 extern crate ethabi;
+extern crate petgraph;
 extern crate sha3;
 extern crate toml;
 extern crate toml_query;
