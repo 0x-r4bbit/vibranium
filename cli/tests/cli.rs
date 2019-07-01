@@ -279,6 +279,8 @@ mod reset_cmd {
 
     let mut cmd = Command::main_binary()?;
     cmd.arg("compile")
+        .arg("--compiler")
+        .arg("solcjs")
         .arg("--path")
         .arg(&project_path);
 
@@ -481,6 +483,8 @@ mod compile_cmd {
     let mut cmd = Command::main_binary()?;
 
     cmd.arg("compile")
+        .arg("--compiler")
+        .arg("solcjs")
         .arg("--path")
         .arg(&project_path);
 
@@ -653,6 +657,8 @@ mod deploy_cmd {
 
     let mut cmd = Command::main_binary()?;
     cmd.arg("compile")
+        .arg("--compiler")
+        .arg("solcjs")
         .arg("--path")
         .arg(&project_path);
 
@@ -702,6 +708,8 @@ mod deploy_cmd {
 
     let mut cmd = Command::main_binary()?;
     cmd.arg("compile")
+        .arg("--compiler")
+        .arg("solcjs")
         .arg("--path")
         .arg(&project_path);
 
@@ -783,6 +791,8 @@ mod deploy_cmd {
 
     let mut cmd = Command::main_binary()?;
     cmd.arg("compile")
+        .arg("--compiler")
+        .arg("solcjs")
         .arg("--path")
         .arg(&project_path);
 
@@ -829,6 +839,8 @@ mod deploy_cmd {
 
     let mut cmd = Command::main_binary()?;
     cmd.arg("compile")
+        .arg("--compiler")
+        .arg("solcjs")
         .arg("--path")
         .arg(&project_path);
 
@@ -883,6 +895,8 @@ mod deploy_cmd {
 
     let mut cmd = Command::main_binary()?;
     cmd.arg("compile")
+        .arg("--compiler")
+        .arg("solcjs")
         .arg("--path")
         .arg(&project_path);
 
@@ -927,6 +941,8 @@ mod deploy_cmd {
 
     let mut cmd = Command::main_binary()?;
     cmd.arg("compile")
+        .arg("--compiler")
+        .arg("solcjs")
         .arg("--path")
         .arg(&project_path);
 
@@ -982,6 +998,8 @@ mod deploy_cmd {
 
     let mut cmd = Command::main_binary()?;
     cmd.arg("compile")
+        .arg("--compiler")
+        .arg("solcjs")
         .arg("--path")
         .arg(&project_path);
 
@@ -1028,6 +1046,8 @@ mod deploy_cmd {
 
     let mut cmd = Command::main_binary()?;
     cmd.arg("compile")
+        .arg("--compiler")
+        .arg("solcjs")
         .arg("--path")
         .arg(&project_path);
 
@@ -1110,6 +1130,8 @@ mod list_cmd {
 
     let mut cmd = Command::main_binary()?;
     cmd.arg("compile")
+        .arg("--compiler")
+        .arg("solcjs")
         .arg("--path")
         .arg(&project_path);
 

@@ -39,29 +39,30 @@ jobs:
         inputs:
           versionSpec: "10.5.0"
         displayName: Install Node
-      - script: |
-          mkdir -p ../Downloads
-          cd ../Downloads
-          curl -L -o "solc" "https://github.com/ethereum/solidity/releases/download/v0.5.9/solc-static-linux"
-          chmod +x solc
-        displayName: Linux install Solc
-        condition: eq( variables['Agent.OS'], 'Linux' )
-      - script: |
-          brew update
-          brew upgrade
-          brew tap ethereum/ethereum
-          brew install solidity
-        displayName: Mac install Solc
-        condition: eq( variables['Agent.OS'], 'Darwin' )
-      - powershell: |
-          mkdir -p ../Downloads
-          $client = new-object System.Net.WebClient
-          $client.DownloadFile("https://github.com/ethereum/solidity/releases/download/v0.5.9/solidity-windows.zip", "..\Downloads\solidity-windows.zip")
-          Expand-Archive –Path “..\Downloads\solidity-windows.zip” –Destination “..\Downloads\solidity-windows”
-        displayName: Windows install Solc 
-        condition: eq( variables['Agent.OS'], 'Windows_NT' )
-      - script: |
-          npm install -g ganache-cli
+      - script: npm install -g solc
+        displayName: Install Solcjs
+      #- script: |
+          #mkdir -p ../Downloads
+          #cd ../Downloads
+          #curl -L -o "solc" "https://github.com/ethereum/solidity/releases/download/v0.5.9/solc-static-linux"
+          #chmod +x solc
+        #displayName: Linux install Solc
+        #condition: eq( variables['Agent.OS'], 'Linux' )
+      #- script: |
+          #brew update
+          #brew upgrade
+          #brew tap ethereum/ethereum
+          #brew install solidity
+        #displayName: Mac install Solc
+        #condition: eq( variables['Agent.OS'], 'Darwin' )
+      #- powershell: |
+          #mkdir -p ../Downloads
+          #$client = new-object System.Net.WebClient
+          #$client.DownloadFile("https://github.com/ethereum/solidity/releases/download/v0.5.9/solidity-windows.zip", "..\Downloads\solidity-windows.zip")
+          #Expand-Archive –Path “..\Downloads\solidity-windows.zip” –Destination “..\Downloads\solidity-windows”
+        #displayName: Windows install Solc 
+        #condition: eq( variables['Agent.OS'], 'Windows_NT' )
+      - script: npm install -g ganache-cli
         displayName: Install Ganache CLI
       #- script: bash <(curl https://get.parity.io -L)
         #condition: ne( variables['Agent.OS'], 'Windows_NT' )
@@ -102,7 +103,7 @@ jobs:
         displayName: Windows start Ganache
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
       - bash: |
-          export PATH="$(cd ../Downloads && pwd):${PATH}"
-          export PATH="$(cd ../Downloads/solidity-windows && pwd):${PATH}"
+          #export PATH="$(cd ../Downloads && pwd):${PATH}"
+          #export PATH="$(cd ../Downloads/solidity-windows && pwd):${PATH}"
           cd cli && cargo test --all
         displayName: Cargo test vibranium-cli
