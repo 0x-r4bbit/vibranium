@@ -328,11 +328,11 @@ fn run() -> Result<(), Error> {
             println!("Nothing to deploy.");
           } else {
             println!();
-            for (artifact, data) in contracts {
-              if data.2 {
-                println!("  {:?}: {} (skipped) [Source: {}]", data.1, data.0, artifact);
+            for (_address, data) in contracts {
+              if data.3 {
+                println!("  {:?}: {} (skipped) [Source: {}]", data.1, data.0, data.2);
               } else {
-                println!("  {:?}: {} [Source: {}]", data.1, data.0, artifact);
+                println!("  {:?}: {} [Source: {}]", data.1, data.0, data.2);
               }
             }
             println!();
