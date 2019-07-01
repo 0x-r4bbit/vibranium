@@ -265,6 +265,7 @@ mod reset_cmd {
       smart_contracts: vec![
         SmartContractConfig {
           name: contract_name.to_string(),
+          instance_of: None,
           args: Some(vec![
             SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
           ]),
@@ -572,6 +573,7 @@ mod deploy_cmd {
   use predicates::prelude::*;
 
   use super::setup_vibranium_project;
+  use super::set_configuration;
   use super::create_test_contract;
   use vibranium::config::{
     ProjectConfig,
@@ -640,6 +642,7 @@ mod deploy_cmd {
       smart_contracts: vec![
         SmartContractConfig {
           name: contract_name.to_string(),
+          instance_of: None,
           args: Some(vec![
             SmartContractArg {
               value: "2".to_string(),
@@ -691,6 +694,7 @@ mod deploy_cmd {
       smart_contracts: vec![
         SmartContractConfig {
           name: contract_name.to_string(),
+          instance_of: None,
           args: Some(vec![
             SmartContractArg {
               value: "200".to_string(),
@@ -741,6 +745,7 @@ mod deploy_cmd {
       tracking_enabled: None,
       smart_contracts: vec![SmartContractConfig {
         name: contract_name.to_string(),
+        instance_of: None,
         args: None,
         gas_limit: None,
         gas_price: None,
@@ -780,6 +785,7 @@ mod deploy_cmd {
       tracking_enabled: None,
       smart_contracts: vec![SmartContractConfig {
         name: contract_name.to_string(),
+        instance_of: None,
         args: None,
         gas_limit: Some(20000),
         gas_price: None,
@@ -825,6 +831,7 @@ mod deploy_cmd {
       smart_contracts: vec![
         SmartContractConfig {
           name: contract_name.to_string(),
+          instance_of: None,
           args: Some(vec![
             SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
           ]),
@@ -872,6 +879,7 @@ mod deploy_cmd {
       smart_contracts: vec![
         SmartContractConfig {
           name: contract_name.to_string(),
+          instance_of: None,
           args: Some(vec![
             SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
           ]),
@@ -880,6 +888,7 @@ mod deploy_cmd {
         },
         SmartContractConfig {
           name: contract_name_2.to_string(),
+          instance_of: None,
           args: Some(vec![
             SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
           ]),
@@ -927,6 +936,7 @@ mod deploy_cmd {
       smart_contracts: vec![
         SmartContractConfig {
           name: contract_name.to_string(),
+          instance_of: None,
           args: Some(vec![
             SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
           ]),
@@ -984,6 +994,7 @@ mod deploy_cmd {
       smart_contracts: vec![
         SmartContractConfig {
           name: contract_name.to_string(),
+          instance_of: None,
           args: Some(vec![
             SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
           ]),
@@ -1032,6 +1043,7 @@ mod deploy_cmd {
       smart_contracts: vec![
         SmartContractConfig {
           name: contract_name.to_string(),
+          instance_of: None,
           args: Some(vec![
             SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
           ]),
@@ -1063,6 +1075,56 @@ mod deploy_cmd {
 
     let tracking_file = project_path.join(".vibranium").join("tracking.toml");
     assert_eq!(tracking_file.exists(), false);
+
+    tmp_dir.close()?;
+    Ok(())
+  }
+
+  #[test]
+  fn it_should_use_bytecode_of_specified_instance_of_configuration() -> Result<(), Box<std::error::Error>> {
+    let mut config = ProjectConfig::default();
+    let contract_name = "SimpleTestContract";
+
+    config.deployment = Some(ProjectDeploymentConfig {
+      gas_limit: None,
+      gas_price: None,
+      tx_confirmations: None,
+      tracking_enabled: None,
+      smart_contracts: vec![
+        SmartContractConfig {
+          name: "InstanceOfSimpleStorage".to_string(),
+          args: Some(vec![
+            SmartContractArg { value: "500".to_string(),kind: "uint".to_string() },
+          ]),
+          gas_limit: None,
+          gas_price: None,
+          // we update this value manually down below due to toml-rs'
+          // ValueAfterTable error.
+          instance_of: None,
+        }
+      ],
+    });
+
+    let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
+    create_test_contract(&project_path, "simple_test_contract.sol")?;
+
+    set_configuration("deployment.smart_contracts[1].instance_of", &contract_name.to_string(), &project_path)?;
+
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("compile")
+        .arg("--compiler")
+        .arg("solcjs")
+        .arg("--path")
+        .arg(&project_path);
+
+    cmd.assert().success();
+
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("deploy")
+        .arg("--path")
+        .arg(&project_path);
+
+    cmd.assert().success();
 
     tmp_dir.close()?;
     Ok(())
@@ -1116,6 +1178,7 @@ mod list_cmd {
       smart_contracts: vec![
         SmartContractConfig {
           name: contract_name.to_string(),
+          instance_of: None,
           args: Some(vec![
             SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
           ]),

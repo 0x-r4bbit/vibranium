@@ -12,7 +12,7 @@ use ethabi::token::{LenientTokenizer, Tokenizer};
 use petgraph::graphmap::DiGraphMap;
 use petgraph::algo::toposort;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 use tracker::DeploymentTracker;
 use web3::contract::Options;
@@ -44,7 +44,7 @@ impl<'a> Deployer<'a> {
     }
   }
 
-  pub fn deploy(&self, options: DeployOptions) -> Result<HashMap<String, (String, Address, bool)>, DeploymentError>  {
+  pub fn deploy(&self, options: DeployOptions) -> Result<HashMap<Address, (String, Address, String, bool)>, DeploymentError>  {
 
     let project_config = self.config.read()?;
 
@@ -55,7 +55,8 @@ impl<'a> Deployer<'a> {
     let deployment_config = &project_config.deployment.unwrap();
 
     let artifacts_path = self.config.project_path.join(&project_config.sources.artifacts);
-    let mut artifacts_dir = std::fs::read_dir(&artifacts_path)?;
+    let artifacts_dir = std::fs::read_dir(&artifacts_path)?;
+    let artifact_names: Vec<PathBuf> = artifacts_dir.map(|res| res.unwrap().path()).collect();
     let accounts = self.connector.accounts()?;
 
     let general_gas_price = deployment_config.gas_price.map(U256::from).unwrap_or_else(|| self.connector.gas_price().ok().unwrap_or_else(|| U256::from(DEFAULT_GAS_PRICE)));
@@ -75,17 +76,16 @@ impl<'a> Deployer<'a> {
 
     for smart_contract_config in sorted_smart_contract_configs {
 
-      if let Some(artifact) = artifacts_dir.find(|entry| {
-        entry.as_ref().unwrap().path().to_string_lossy().to_string().contains(&smart_contract_config.name)
-      }) {
-        let artifact = artifact?;
-        let file_path = artifact.path();
-        let file_extension = &file_path.extension().unwrap().to_str().unwrap();
+      let smart_contract_name = smart_contract_config.instance_of.as_ref().unwrap_or(&smart_contract_config.name);
+
+      if let Some(artifact) = artifact_names.iter().find(|path| path.to_string_lossy().to_string().contains(smart_contract_name)) {
+
+        let file_extension = &artifact.extension().unwrap().to_str().unwrap();
 
         if file_extension == &ARTIFACT_EXTENSION_BINARY || file_extension == &ARTIFACT_EXTENSION_ABI {
 
-          let file_bin_path = Path::new(&file_path).with_extension(&ARTIFACT_EXTENSION_BINARY);
-          let file_abi_path = Path::new(&file_path).with_extension(&ARTIFACT_EXTENSION_ABI);
+          let file_bin_path = Path::new(&artifact).with_extension(&ARTIFACT_EXTENSION_BINARY);
+          let file_abi_path = Path::new(&artifact).with_extension(&ARTIFACT_EXTENSION_ABI);
 
           if file_extension == &ARTIFACT_EXTENSION_BINARY && !file_abi_path.exists() {
             return Err(DeploymentError::MissingArtifact(ARTIFACT_EXTENSION_ABI.to_string(), file_bin_path.to_string_lossy().to_string()));
@@ -109,7 +109,7 @@ impl<'a> Deployer<'a> {
 
             if let Some(tracked_contract) = tracked_contract {
               info!("{} is already deployed at {:?}", &tracked_contract.name, &tracked_contract.address);
-              deployed_contracts.insert(file_bin_path.to_string_lossy().to_string(), (tracked_contract.name, tracked_contract.address, true));
+              deployed_contracts.insert(tracked_contract.address, (tracked_contract.name, tracked_contract.address, file_bin_path.to_string_lossy().to_string(), true));
               continue;
             }
           }
@@ -139,8 +139,10 @@ impl<'a> Deployer<'a> {
           }
 
           info!("Deployed {} at {:?}", &smart_contract_config.name, &contract.address());
-          deployed_contracts.insert(file_bin_path.to_string_lossy().to_string(), (smart_contract_config.name.to_owned(), contract.address(), false));
+          deployed_contracts.insert(contract.address(), (smart_contract_config.name.to_owned(), contract.address(), file_bin_path.to_string_lossy().to_string(), false));
         }
+      } else {
+        warn!("No bytecode or ABI found for Smart Contract '{}'", &smart_contract_name);
       }
     }
     Ok(deployed_contracts)
@@ -152,7 +154,7 @@ impl<'a> Deployer<'a> {
   }
 }
 
-fn tokenize_args(args: &[SmartContractArg], deployed_contracts: &HashMap<String, (String, Address, bool)>) -> Result<Vec<Token>, DeploymentError> {
+fn tokenize_args(args: &[SmartContractArg], deployed_contracts: &HashMap<Address, (String, Address, String, bool)>) -> Result<Vec<Token>, DeploymentError> {
   let mut tokenized_args: Vec<Token> = vec![];
 
   for arg in args {

@@ -101,6 +101,7 @@ pub struct SmartContractConfig {
   pub args: Option<Vec<SmartContractArg>>,
   pub gas_price: Option<usize>,
   pub gas_limit: Option<usize>,
+  pub instance_of: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
