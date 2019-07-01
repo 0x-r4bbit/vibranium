@@ -92,7 +92,7 @@ impl Vibranium {
       })
       .and_then(|output| output)
       .and_then(|output| {
-        if !output.stderr.is_empty() {
+        if !output.status.success() {
           Err(compiler::error::CompilerError::Other(String::from_utf8_lossy(&output.stderr).to_string()))
         } else {
           Ok(output)
