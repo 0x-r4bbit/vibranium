@@ -282,6 +282,9 @@ fn run() -> Result<(), Error> {
         .compile(config)
         .map_err(error::CliError::CompilationError)
         .and_then(|output| {
+          if !output.stderr.is_empty() {
+            io::stderr().write_all(&output.stderr).unwrap();
+          }
           io::stdout().write_all(&output.stdout).unwrap();
           println!("Done.");
           Ok(())
