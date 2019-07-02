@@ -468,9 +468,7 @@ mod compile_cmd {
         .arg("--path")
         .arg(&project_path);
 
-    cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains("Couldn't find executable for requested compiler"));
+    cmd.assert().failure();
 
     tmp_dir.close()?;
     Ok(())
