@@ -31,20 +31,13 @@ impl Error for CompilerError {
 
 impl fmt::Display for CompilerError {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    let executable_not_found_message = "Couldn't find executable for requested compiler";
     match self {
       CompilerError::Io(error) => write!(f, "{}", error.description()),
       CompilerError::ExecutableNotFound(_error, exec) => write!(f, "Couldn't find executable for compiler {}", exec),
       CompilerError::VibraniumDirectoryNotFound(error) => write!(f, "{}", error.description()),
       CompilerError::InvalidConfig(error) => write!(f, "{}", error.description()),
       CompilerError::UnsupportedStrategy => write!(f, "Couldn't compile project without `CompilerConfig::compiler_options`. No built-in support for requested compiler."),
-      CompilerError::Other(message) => {
-        if message.contains("not found") || message.contains("not recognized") {
-          write!(f, "{}", &executable_not_found_message)
-        } else {
-          write!(f, "{}", &message)
-        }
-      },
+      CompilerError::Other(message) => write!(f, "{}", &message),
     }
   }
 }
