@@ -265,6 +265,7 @@ mod reset_cmd {
       smart_contracts: vec![
         SmartContractConfig {
           name: contract_name.to_string(),
+          address: None,
           instance_of: None,
           args: Some(vec![
             SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
@@ -627,6 +628,80 @@ mod deploy_cmd {
     Ok(())
   }
 
+  #[test]
+  fn it_should_skip_deployment_if_address_is_provided_in_configuration() -> Result<(), Box<std::error::Error>> {
+    let mut config = ProjectConfig::default();
+    let contract_name = "SimpleTestContract";
+
+    config.deployment = Some(ProjectDeploymentConfig {
+      gas_limit: None,
+      gas_price: None,
+      tx_confirmations: None,
+      tracking_enabled: None,
+      smart_contracts: vec![
+        SmartContractConfig {
+          name: contract_name.to_string(),
+          address: Some("0x552C51e32c70D5859E5163D319531B63e5dbBFF7".to_string()),
+          instance_of: None,
+          args: None,
+          gas_limit: None,
+          gas_price: None,
+        }
+      ],
+    });
+
+    let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
+
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("deploy")
+        .arg("--path")
+        .arg(&project_path);
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("skipped"));
+
+    tmp_dir.close()?;
+    Ok(())
+  }
+
+  #[test]
+  fn it_should_fail_if_provided_address_is_invalid() -> Result<(), Box<std::error::Error>> {
+
+    let mut config = ProjectConfig::default();
+    let contract_name = "SimpleTestContract";
+
+    config.deployment = Some(ProjectDeploymentConfig {
+      gas_limit: None,
+      gas_price: None,
+      tx_confirmations: None,
+      tracking_enabled: None,
+      smart_contracts: vec![
+        SmartContractConfig {
+          name: contract_name.to_string(),
+          address: Some("0x".to_string()),
+          instance_of: None,
+          args: None,
+          gas_limit: None,
+          gas_price: None,
+        }
+      ],
+    });
+
+    let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
+
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("deploy")
+        .arg("--path")
+        .arg(&project_path);
+
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("Invalid address"));
+
+    tmp_dir.close()?;
+    Ok(())
+  }
 
   #[test]
   fn it_should_fail_if_parameter_args_are_not_valid() -> Result<(), Box<std::error::Error>> {
@@ -642,6 +717,7 @@ mod deploy_cmd {
       smart_contracts: vec![
         SmartContractConfig {
           name: contract_name.to_string(),
+          address: None,
           instance_of: None,
           args: Some(vec![
             SmartContractArg {
@@ -694,6 +770,7 @@ mod deploy_cmd {
       smart_contracts: vec![
         SmartContractConfig {
           name: contract_name.to_string(),
+          address: None,
           instance_of: None,
           args: Some(vec![
             SmartContractArg {
@@ -745,6 +822,7 @@ mod deploy_cmd {
       tracking_enabled: None,
       smart_contracts: vec![SmartContractConfig {
         name: contract_name.to_string(),
+        address: None,
         instance_of: None,
         args: None,
         gas_limit: None,
@@ -785,6 +863,7 @@ mod deploy_cmd {
       tracking_enabled: None,
       smart_contracts: vec![SmartContractConfig {
         name: contract_name.to_string(),
+        address: None,
         instance_of: None,
         args: None,
         gas_limit: Some(20000),
@@ -831,6 +910,7 @@ mod deploy_cmd {
       smart_contracts: vec![
         SmartContractConfig {
           name: contract_name.to_string(),
+          address: None,
           instance_of: None,
           args: Some(vec![
             SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
@@ -879,6 +959,7 @@ mod deploy_cmd {
       smart_contracts: vec![
         SmartContractConfig {
           name: contract_name.to_string(),
+          address: None,
           instance_of: None,
           args: Some(vec![
             SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
@@ -888,6 +969,7 @@ mod deploy_cmd {
         },
         SmartContractConfig {
           name: contract_name_2.to_string(),
+          address: None,
           instance_of: None,
           args: Some(vec![
             SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
@@ -936,6 +1018,7 @@ mod deploy_cmd {
       smart_contracts: vec![
         SmartContractConfig {
           name: contract_name.to_string(),
+          address: None,
           instance_of: None,
           args: Some(vec![
             SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
@@ -994,6 +1077,7 @@ mod deploy_cmd {
       smart_contracts: vec![
         SmartContractConfig {
           name: contract_name.to_string(),
+          address: None,
           instance_of: None,
           args: Some(vec![
             SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
@@ -1043,6 +1127,7 @@ mod deploy_cmd {
       smart_contracts: vec![
         SmartContractConfig {
           name: contract_name.to_string(),
+          address: None,
           instance_of: None,
           args: Some(vec![
             SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },
@@ -1093,6 +1178,7 @@ mod deploy_cmd {
       smart_contracts: vec![
         SmartContractConfig {
           name: "InstanceOfSimpleStorage".to_string(),
+          address: None,
           args: Some(vec![
             SmartContractArg { value: "500".to_string(),kind: "uint".to_string() },
           ]),
@@ -1178,6 +1264,7 @@ mod list_cmd {
       smart_contracts: vec![
         SmartContractConfig {
           name: contract_name.to_string(),
+          address: None,
           instance_of: None,
           args: Some(vec![
             SmartContractArg { value: "200".to_string(),kind: "uint".to_string() },

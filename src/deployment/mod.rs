@@ -12,6 +12,7 @@ use ethabi::token::{LenientTokenizer, Tokenizer};
 use petgraph::graphmap::DiGraphMap;
 use petgraph::algo::toposort;
 use std::fs;
+use std::str::FromStr;
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 use tracker::DeploymentTracker;
@@ -75,6 +76,13 @@ impl<'a> Deployer<'a> {
     let sorted_smart_contract_configs = sort_by_dependencies(&deployment_config.smart_contracts)?;
 
     for smart_contract_config in sorted_smart_contract_configs {
+
+      if let Some(address) = &smart_contract_config.address {
+        let address = Address::from_str(&address[2..]).map_err(|err| DeploymentError::InvalidAddress(smart_contract_config.name.to_owned(), err.to_string()))?;
+        info!("{} is already deployed at {:?}", &smart_contract_config.name, &address);
+        deployed_contracts.insert(address, (smart_contract_config.name.clone(), address, "unknown".to_string(), true));
+        continue;
+      }
 
       let smart_contract_name = smart_contract_config.instance_of.as_ref().unwrap_or(&smart_contract_config.name);
 
