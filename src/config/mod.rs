@@ -98,6 +98,7 @@ pub struct ProjectDeploymentConfig {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SmartContractConfig {
   pub name: String,
+  pub address: Option<String>,
   pub args: Option<Vec<SmartContractArg>>,
   pub gas_price: Option<usize>,
   pub gas_limit: Option<usize>,
