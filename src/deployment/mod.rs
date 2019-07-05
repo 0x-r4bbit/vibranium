@@ -13,7 +13,7 @@ use petgraph::graphmap::DiGraphMap;
 use petgraph::algo::toposort;
 use std::fs;
 use std::str::FromStr;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::collections::HashMap;
 use tracker::DeploymentTracker;
 use web3::contract::Options;
@@ -54,10 +54,6 @@ impl<'a> Deployer<'a> {
     }
 
     let deployment_config = &project_config.deployment.unwrap();
-
-    let artifacts_path = self.config.project_path.join(&project_config.sources.artifacts);
-    let artifacts_dir = std::fs::read_dir(&artifacts_path)?;
-    let artifact_names: Vec<PathBuf> = artifacts_dir.map(|res| res.unwrap().path()).collect();
     let accounts = self.connector.accounts()?;
 
     let general_gas_price = deployment_config.gas_price.map(U256::from).unwrap_or_else(|| self.connector.gas_price().ok().unwrap_or_else(|| U256::from(DEFAULT_GAS_PRICE)));
@@ -84,76 +80,96 @@ impl<'a> Deployer<'a> {
         continue;
       }
 
-      let smart_contract_name = smart_contract_config.instance_of.as_ref().unwrap_or(&smart_contract_config.name);
+      if let Some((bin_path, abi_path)) = self.get_artifacts(&project_config.sources.artifacts, smart_contract_config)? {
+
+        let bytecode = fs::read_to_string(&bin_path).unwrap();
+        let abi = fs::read(abi_path).unwrap();
+
+        let args = smart_contract_config.args.as_ref().unwrap_or(&vec![]).iter().map(|arg| arg.value.clone()).collect();
+
+        let tokenized_args = match &smart_contract_config.args {
+          Some(args) => tokenize_args(args, &deployed_contracts)?,
+          None => vec![]
+        };
+
+        if tracking_enabled {
+          let block_hash = self.get_first_block_hash().unwrap();
+          let tracked_contract = self.tracker.get_smart_contract_tracking_data(&block_hash, &smart_contract_config.name, &bytecode, &args)?;
+
+          if let Some(tracked_contract) = tracked_contract {
+            info!("{} is already deployed at {:?}", &tracked_contract.name, &tracked_contract.address);
+            deployed_contracts.insert(tracked_contract.address, (tracked_contract.name, tracked_contract.address, bin_path.to_string_lossy().to_string(), true));
+            continue;
+          }
+        }
+
+        info!("Deploying {}...", &smart_contract_config.name);
+
+        let builder = self.connector.deploy(&abi)?;
+
+        let pending_contract = builder.confirmations(confirmations)
+                              .options(Options::with(|opts| {
+                                opts.gas_price = smart_contract_config.gas_price.map(U256::from).or_else(|| Some(general_gas_price));
+                                opts.gas = smart_contract_config.gas_limit.map(U256::from).or_else(|| Some(general_gas_limit));
+                              }))
+                              .execute(&bytecode, &*tokenized_args, accounts[0])
+                              .map_err(|err| DeploymentError::InvalidConstructorArgs(err, smart_contract_config.name.to_owned()))?;
+
+        let contract = pending_contract.wait().map_err(|err| DeploymentError::DeployContract(err, smart_contract_config.name.to_owned()))?;
+
+        if tracking_enabled {
+          self.tracker.track(
+            self.get_first_block_hash().unwrap(), 
+            smart_contract_config.name.to_owned(),
+            bytecode,
+            &args,
+            contract.address(),
+          )?;
+        }
+
+        info!("Deployed {} at {:?}", &smart_contract_config.name, &contract.address());
+        deployed_contracts.insert(contract.address(), (smart_contract_config.name.to_owned(), contract.address(), bin_path.to_string_lossy().to_string(), false));
+      } else {
+        warn!("No bytecode or ABI found for Smart Contract '{}'", &smart_contract_config.name);
+      }
+    }
+    Ok(deployed_contracts)
+  }
+
+  fn get_artifacts(&self, artifacts_path: &str, config: &SmartContractConfig) -> Result<Option<(PathBuf, PathBuf)>, DeploymentError> {
+    if config.bytecode_path.is_some() && !config.abi_path.is_some() {
+      return Err(DeploymentError::MissingABIPath(config.name.to_string()));
+    } else if !config.bytecode_path.is_some() && config.abi_path.is_some() {
+      return Err(DeploymentError::MissingBytecodePath(config.name.to_string()));
+    } else if config.bytecode_path.is_some() && config.abi_path.is_some() {
+      let bytecode_path = self.config.project_path.join(&PathBuf::from(config.bytecode_path.as_ref().unwrap()));
+      let abi_path = self.config.project_path.join(&PathBuf::from(config.abi_path.as_ref().unwrap()));
+      info!("Using pre-defined artifacts: {:?} and {:?}", &abi_path, &bytecode_path);
+      return Ok(Some((bytecode_path, abi_path)))
+    } else {
+      let artifacts_path = self.config.project_path.join(artifacts_path);
+      let artifacts_dir = std::fs::read_dir(&artifacts_path)?;
+      let artifact_names: Vec<PathBuf> = artifacts_dir.map(|res| res.unwrap().path()).collect();
+      let smart_contract_name = config.instance_of.as_ref().unwrap_or(&config.name);
 
       if let Some(artifact) = artifact_names.iter().find(|path| path.to_string_lossy().to_string().contains(smart_contract_name)) {
-
         let file_extension = &artifact.extension().unwrap().to_str().unwrap();
 
         if file_extension == &ARTIFACT_EXTENSION_BINARY || file_extension == &ARTIFACT_EXTENSION_ABI {
 
-          let file_bin_path = Path::new(&artifact).with_extension(&ARTIFACT_EXTENSION_BINARY);
-          let file_abi_path = Path::new(&artifact).with_extension(&ARTIFACT_EXTENSION_ABI);
+          let file_bin_path = PathBuf::from(&artifact).with_extension(&ARTIFACT_EXTENSION_BINARY);
+          let file_abi_path = PathBuf::from(&artifact).with_extension(&ARTIFACT_EXTENSION_ABI);
 
           if file_extension == &ARTIFACT_EXTENSION_BINARY && !file_abi_path.exists() {
             return Err(DeploymentError::MissingArtifact(ARTIFACT_EXTENSION_ABI.to_string(), file_bin_path.to_string_lossy().to_string()));
           } else if file_extension == &ARTIFACT_EXTENSION_ABI && !file_bin_path.exists() {
             return Err(DeploymentError::MissingArtifact(ARTIFACT_EXTENSION_BINARY.to_string(), file_abi_path.to_string_lossy().to_string()));
           }
-
-          let bytecode = fs::read_to_string(&file_bin_path).unwrap();
-          let abi = fs::read(file_abi_path).unwrap();
-
-          let args = smart_contract_config.args.as_ref().unwrap_or(&vec![]).iter().map(|arg| arg.value.clone()).collect();
-
-          let tokenized_args = match &smart_contract_config.args {
-            Some(args) => tokenize_args(args, &deployed_contracts)?,
-            None => vec![]
-          };
-
-          if tracking_enabled {
-            let block_hash = self.get_first_block_hash().unwrap();
-            let tracked_contract = self.tracker.get_smart_contract_tracking_data(&block_hash, &smart_contract_config.name, &bytecode, &args)?;
-
-            if let Some(tracked_contract) = tracked_contract {
-              info!("{} is already deployed at {:?}", &tracked_contract.name, &tracked_contract.address);
-              deployed_contracts.insert(tracked_contract.address, (tracked_contract.name, tracked_contract.address, file_bin_path.to_string_lossy().to_string(), true));
-              continue;
-            }
-          }
-
-          info!("Deploying {}...", &smart_contract_config.name);
-
-          let builder = self.connector.deploy(&abi)?;
-
-          let pending_contract = builder.confirmations(confirmations)
-                                .options(Options::with(|opts| {
-                                  opts.gas_price = smart_contract_config.gas_price.map(U256::from).or_else(|| Some(general_gas_price));
-                                  opts.gas = smart_contract_config.gas_limit.map(U256::from).or_else(|| Some(general_gas_limit));
-                                }))
-                                .execute(&bytecode, &*tokenized_args, accounts[0])
-                                .map_err(|err| DeploymentError::InvalidConstructorArgs(err, smart_contract_config.name.to_owned()))?;
-
-          let contract = pending_contract.wait().map_err(|err| DeploymentError::DeployContract(err, smart_contract_config.name.to_owned()))?;
-
-          if tracking_enabled {
-            self.tracker.track(
-              self.get_first_block_hash().unwrap(), 
-              smart_contract_config.name.to_owned(),
-              bytecode,
-              &args,
-              contract.address(),
-            )?;
-          }
-
-          info!("Deployed {} at {:?}", &smart_contract_config.name, &contract.address());
-          deployed_contracts.insert(contract.address(), (smart_contract_config.name.to_owned(), contract.address(), file_bin_path.to_string_lossy().to_string(), false));
+          return Ok(Some((file_bin_path, file_abi_path)));
         }
-      } else {
-        warn!("No bytecode or ABI found for Smart Contract '{}'", &smart_contract_name);
       }
+      Ok(None)
     }
-    Ok(deployed_contracts)
   }
 
   fn get_first_block_hash(&self) -> Result<H256, DeploymentError> {

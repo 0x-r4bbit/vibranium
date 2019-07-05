@@ -103,6 +103,8 @@ pub struct SmartContractConfig {
   pub gas_price: Option<usize>,
   pub gas_limit: Option<usize>,
   pub instance_of: Option<String>,
+  pub abi_path: Option<String>,
+  pub bytecode_path: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
