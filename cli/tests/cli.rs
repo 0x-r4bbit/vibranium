@@ -35,12 +35,20 @@ fn setup_vibranium_project(config: Option<ProjectConfig>) -> Result<(TempDir, Pa
   Ok((tmp_dir, project_path))
 }
 
-fn create_test_contract(project_path: &PathBuf, name: &str) -> Result<(), Box<std::error::Error>> {
+fn create_test_file(project_path: &PathBuf, dest: &str, name: &str) -> Result<(), Box<std::error::Error>> {
   let cwd = std::env::current_dir()?;
   let fixture_file = cwd.join("tests").join("fixtures").join(name);
-  let test_contract_file = project_path.join("contracts").join(name);
-  std::fs::copy(fixture_file, test_contract_file)?;
+  let test_file = project_path.join(dest).join(name);
+  std::fs::copy(fixture_file, test_file)?;
   Ok(())
+}
+
+fn create_test_contract(project_path: &PathBuf, name: &str) -> Result<(), Box<std::error::Error>> {
+  create_test_file(project_path, "contracts", name)
+}
+
+fn create_test_artifact(project_path: &PathBuf, name: &str) -> Result<(), Box<std::error::Error>> {
+  create_test_file(project_path, "artifacts", name)
 }
 
 fn read_config(project_path: &PathBuf) -> Result<ProjectConfig, Box<std::error::Error>> {
@@ -272,6 +280,8 @@ mod reset_cmd {
           ]),
           gas_limit: None,
           gas_price: None,
+          abi_path: None,
+          bytecode_path: None,
         },
       ],
     });
@@ -574,6 +584,7 @@ mod deploy_cmd {
   use super::setup_vibranium_project;
   use super::set_configuration;
   use super::create_test_contract;
+  use super::create_test_artifact;
   use vibranium::config::{
     ProjectConfig,
     ProjectDeploymentConfig,
@@ -644,6 +655,8 @@ mod deploy_cmd {
           args: None,
           gas_limit: None,
           gas_price: None,
+          abi_path: None,
+          bytecode_path: None,
         }
       ],
     });
@@ -682,6 +695,8 @@ mod deploy_cmd {
           args: None,
           gas_limit: None,
           gas_price: None,
+          abi_path: None,
+          bytecode_path: None,
         }
       ],
     });
@@ -725,6 +740,8 @@ mod deploy_cmd {
           ]),
           gas_limit: None,
           gas_price: None,
+          abi_path: None,
+          bytecode_path: None,
         }
       ],
     });
@@ -778,6 +795,8 @@ mod deploy_cmd {
           ]),
           gas_limit: None,
           gas_price: None,
+          abi_path: None,
+          bytecode_path: None,
         }
       ],
     });
@@ -825,6 +844,8 @@ mod deploy_cmd {
         args: None,
         gas_limit: None,
         gas_price: None,
+        abi_path: None,
+        bytecode_path: None,
       }],
     });
 
@@ -866,6 +887,8 @@ mod deploy_cmd {
         args: None,
         gas_limit: Some(20000),
         gas_price: None,
+        abi_path: None,
+        bytecode_path: None,
       }],
     });
 
@@ -915,6 +938,8 @@ mod deploy_cmd {
           ]),
           gas_limit: None,
           gas_price: None,
+          abi_path: None,
+          bytecode_path: None,
         },
       ],
     });
@@ -964,6 +989,8 @@ mod deploy_cmd {
           ]),
           gas_limit: None,
           gas_price: None,
+          abi_path: None,
+          bytecode_path: None,
         },
         SmartContractConfig {
           name: contract_name_2.to_string(),
@@ -974,6 +1001,8 @@ mod deploy_cmd {
           ]),
           gas_limit: None,
           gas_price: None,
+          abi_path: None,
+          bytecode_path: None,
         },
       ],
     });
@@ -1023,6 +1052,8 @@ mod deploy_cmd {
           ]),
           gas_limit: None,
           gas_price: None,
+          abi_path: None,
+          bytecode_path: None,
         },
       ],
     });
@@ -1082,6 +1113,8 @@ mod deploy_cmd {
           ]),
           gas_limit: None,
           gas_price: None,
+          abi_path: None,
+          bytecode_path: None,
         },
       ],
     });
@@ -1132,6 +1165,8 @@ mod deploy_cmd {
           ]),
           gas_limit: None,
           gas_price: None,
+          abi_path: None,
+          bytecode_path: None,
         },
       ],
     });
@@ -1185,6 +1220,8 @@ mod deploy_cmd {
           // we update this value manually down below due to toml-rs'
           // ValueAfterTable error.
           instance_of: None,
+          abi_path: None,
+          bytecode_path: None,
         }
       ],
     });
@@ -1269,6 +1306,8 @@ mod list_cmd {
           ]),
           gas_limit: None,
           gas_price: None,
+          abi_path: None,
+          bytecode_path: None,
         },
       ],
     });
