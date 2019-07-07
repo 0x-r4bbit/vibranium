@@ -152,7 +152,7 @@ mod reset_cmd {
     SmartContractArg
   };
 
-  use super::create_test_contract;
+  use super::create_test_artifact;
   use super::setup_vibranium_project;
   use super::set_configuration;
   use super::set_configurations;
@@ -287,16 +287,9 @@ mod reset_cmd {
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
-    create_test_contract(&project_path, "simple_test_contract.sol")?;
 
-    let mut cmd = Command::main_binary()?;
-    cmd.arg("compile")
-        .arg("--compiler")
-        .arg("solcjs")
-        .arg("--path")
-        .arg(&project_path);
-
-    cmd.assert().success();
+    create_test_artifact(&project_path, "SimpleTestContract.abi")?;
+    create_test_artifact(&project_path, "SimpleTestContract.bin")?;
 
     let mut cmd = Command::main_binary()?;
     cmd.arg("deploy")
@@ -577,7 +570,6 @@ mod accounts_cmd {
 mod deploy_cmd {
 
   use std::process::Command;
-  use std::fs::File;
   use assert_cmd::prelude::*;
   use predicates::prelude::*;
 
@@ -747,17 +739,10 @@ mod deploy_cmd {
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
-    create_test_contract(&project_path, "simple_test_contract.sol")?;
 
-    let mut cmd = Command::main_binary()?;
-    cmd.arg("compile")
-        .arg("--compiler")
-        .arg("solcjs")
-        .arg("--path")
-        .arg(&project_path);
+    create_test_artifact(&project_path, "SimpleTestContract.abi")?;
+    create_test_artifact(&project_path, "SimpleTestContract.bin")?;
 
-    cmd.assert().success();
-    
     let mut cmd = Command::main_binary()?;
     cmd.arg("deploy")
         .arg("--path")
@@ -802,17 +787,10 @@ mod deploy_cmd {
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
-    create_test_contract(&project_path, "simple_test_contract.sol")?;
 
-    let mut cmd = Command::main_binary()?;
-    cmd.arg("compile")
-        .arg("--compiler")
-        .arg("solcjs")
-        .arg("--path")
-        .arg(&project_path);
+    create_test_artifact(&project_path, "SimpleTestContract.abi")?;
+    create_test_artifact(&project_path, "SimpleTestContract.bin")?;
 
-    cmd.assert().success();
-    
     let mut cmd = Command::main_binary()?;
     cmd.arg("deploy")
         .arg("--path")
@@ -850,12 +828,9 @@ mod deploy_cmd {
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
-    let artifacts_path = project_path.join("artifacts");
-
     // Having a `contract.bin` but no `contract.abi` will cause Vibranium
     // to stop the deployment.
-    let contracts_bin_path = artifacts_path.join("SimpleTestContract.bin");
-    let _file = File::create(contracts_bin_path)?;
+    create_test_artifact(&project_path, "SimpleTestContract.bin")?;
 
     let mut cmd = Command::main_binary()?;
     cmd.arg("deploy")
@@ -893,16 +868,9 @@ mod deploy_cmd {
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
-    create_test_contract(&project_path, "simple_test_contract.sol")?;
 
-    let mut cmd = Command::main_binary()?;
-    cmd.arg("compile")
-        .arg("--compiler")
-        .arg("solcjs")
-        .arg("--path")
-        .arg(&project_path);
-
-    cmd.assert().success();
+    create_test_artifact(&project_path, "SimpleTestContract.abi")?;
+    create_test_artifact(&project_path, "SimpleTestContract.bin")?;
 
     let mut cmd = Command::main_binary()?;
     cmd.arg("deploy")
@@ -945,17 +913,10 @@ mod deploy_cmd {
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
-    create_test_contract(&project_path, "simple_test_contract.sol")?;
 
-    let mut cmd = Command::main_binary()?;
-    cmd.arg("compile")
-        .arg("--compiler")
-        .arg("solcjs")
-        .arg("--path")
-        .arg(&project_path);
+    create_test_artifact(&project_path, "SimpleTestContract.abi")?;
+    create_test_artifact(&project_path, "SimpleTestContract.bin")?;
 
-    cmd.assert().success();
-    
     let mut cmd = Command::main_binary()?;
     cmd.arg("deploy")
         .arg("--path")
@@ -1059,16 +1020,9 @@ mod deploy_cmd {
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
-    create_test_contract(&project_path, "simple_test_contract.sol")?;
 
-    let mut cmd = Command::main_binary()?;
-    cmd.arg("compile")
-        .arg("--compiler")
-        .arg("solcjs")
-        .arg("--path")
-        .arg(&project_path);
-
-    cmd.assert().success();
+    create_test_artifact(&project_path, "SimpleTestContract.abi")?;
+    create_test_artifact(&project_path, "SimpleTestContract.bin")?;
 
     let mut cmd = Command::main_binary()?;
     cmd.arg("deploy")
@@ -1120,16 +1074,9 @@ mod deploy_cmd {
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
-    create_test_contract(&project_path, "simple_test_contract.sol")?;
 
-    let mut cmd = Command::main_binary()?;
-    cmd.arg("compile")
-        .arg("--compiler")
-        .arg("solcjs")
-        .arg("--path")
-        .arg(&project_path);
-
-    cmd.assert().success();
+    create_test_artifact(&project_path, "SimpleTestContract.abi")?;
+    create_test_artifact(&project_path, "SimpleTestContract.bin")?;
 
     let mut cmd = Command::main_binary()?;
     cmd.arg("deploy")
@@ -1172,16 +1119,9 @@ mod deploy_cmd {
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
-    create_test_contract(&project_path, "simple_test_contract.sol")?;
 
-    let mut cmd = Command::main_binary()?;
-    cmd.arg("compile")
-        .arg("--compiler")
-        .arg("solcjs")
-        .arg("--path")
-        .arg(&project_path);
-
-    cmd.assert().success();
+    create_test_artifact(&project_path, "SimpleTestContract.abi")?;
+    create_test_artifact(&project_path, "SimpleTestContract.bin")?;
 
     let mut cmd = Command::main_binary()?;
     cmd.arg("deploy")
@@ -1260,7 +1200,7 @@ mod list_cmd {
   use predicates::prelude::*;
 
   use super::setup_vibranium_project;
-  use super::create_test_contract;
+  use super::create_test_artifact;
   use vibranium::config::{
     ProjectConfig,
     ProjectDeploymentConfig,
@@ -1313,16 +1253,9 @@ mod list_cmd {
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
-    create_test_contract(&project_path, "simple_test_contract.sol")?;
 
-    let mut cmd = Command::main_binary()?;
-    cmd.arg("compile")
-        .arg("--compiler")
-        .arg("solcjs")
-        .arg("--path")
-        .arg(&project_path);
-
-    cmd.assert().success();
+    create_test_artifact(&project_path, "SimpleTestContract.abi")?;
+    create_test_artifact(&project_path, "SimpleTestContract.bin")?;
 
     let mut cmd = Command::main_binary()?;
     cmd.arg("deploy")
