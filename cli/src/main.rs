@@ -192,7 +192,7 @@ fn run() -> Result<(), Error> {
     ("node", Some(cmd)) => {
       println!("Starting blockchain node...");
       let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
-      let vibranium = Vibranium::new(path);
+      let vibranium = Vibranium::new(path)?;
 
       let client_options = cmd.values_of("client-opts").map(|options| {
         options.map(std::string::ToString::to_string).collect()
@@ -209,7 +209,7 @@ fn run() -> Result<(), Error> {
     ("init", Some(cmd)) => {
       println!("Initializing empty Vibranium project...");
       let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
-      let vibranium = Vibranium::new(path);
+      let vibranium = Vibranium::new(path)?;
 
       vibranium.init_project().and_then(|_| {
         println!("Done.");
@@ -220,7 +220,7 @@ fn run() -> Result<(), Error> {
     ("reset", Some(cmd)) => {
       println!("Resetting Vibranium project...");
       let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
-      let vibranium = Vibranium::new(path);
+      let vibranium = Vibranium::new(path)?;
 
       vibranium.reset_project(ResetOptions {
         restore_config: cmd.is_present("restore-config"),
@@ -233,7 +233,7 @@ fn run() -> Result<(), Error> {
 
     ("config", Some(cmd)) => {
       let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
-      let vibranium = Vibranium::new(path);
+      let vibranium = Vibranium::new(path)?;
 
       if let Some(options) = cmd.values_of("set") {
         let mut args: Vec<String> = options.map(std::string::ToString::to_string).collect();
@@ -267,7 +267,7 @@ fn run() -> Result<(), Error> {
     ("compile", Some(cmd)) => {
       println!("Compiling Vibranium project...");
       let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
-      let vibranium = Vibranium::new(path);
+      let vibranium = Vibranium::new(path)?;
 
       let compiler_options = cmd.values_of("compiler-opts").map(|options| {
         options.map(std::string::ToString::to_string).collect()
@@ -293,7 +293,7 @@ fn run() -> Result<(), Error> {
 
     ("accounts", Some(cmd)) => {
       let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
-      let vibranium = Vibranium::new(path);
+      let vibranium = Vibranium::new(path)?;
 
       let (_eloop, connector) = vibranium.get_blockchain_connector().map_err(error::CliError::BlockchainConnectorError)?;
       let accounts = connector.accounts().map_err(error::CliError::BlockchainConnectorError)?;
@@ -306,7 +306,7 @@ fn run() -> Result<(), Error> {
     ("deploy", Some(cmd)) => {
       println!("Deploying...");
       let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
-      let vibranium = Vibranium::new(path);
+      let vibranium = Vibranium::new(path)?;
 
       let deploy_options = DeployOptions {
         tracking_enabled: if cmd.is_present("no-tracking") {
@@ -344,7 +344,7 @@ fn run() -> Result<(), Error> {
 
     ("list", Some(cmd)) => {
       let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
-      let vibranium = Vibranium::new(path);
+      let vibranium = Vibranium::new(path)?;
       let tracking_data = vibranium.get_tracking_data().map_err(|err| error::CliError::Other(err.to_string()))?;
 
       match tracking_data {

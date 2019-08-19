@@ -1,3 +1,5 @@
+use std::path::{PathBuf, Path};
+
 const LOCALHOST_ADDRESS: &str = "127.0.0.1";
 const LOCALHOST_ALIAS: &str = "localhost";
 
@@ -40,6 +42,22 @@ pub fn normalize_localhost(host: String) -> String {
     LOCALHOST_ADDRESS | LOCALHOST_ALIAS => LOCALHOST_ADDRESS.to_owned(),
     _ => host
   }
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn adjust_canonicalization<P: AsRef<Path>>(p: P) -> PathBuf {
+    p.as_ref().to_path_buf()
+}
+
+#[cfg(target_os = "windows")]
+pub fn adjust_canonicalization<P: AsRef<Path>>(p: P) -> PathBuf {
+    const VERBATIM_PREFIX: &str = r#"\\?\"#;
+    let p = p.as_ref().display().to_string();
+    if p.starts_with(VERBATIM_PREFIX) {
+        PathBuf::from(p[VERBATIM_PREFIX.len()..].to_string())
+    } else {
+        PathBuf::from(p)
+    }
 }
 
 #[cfg(test)]

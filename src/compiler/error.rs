@@ -2,6 +2,7 @@ use std::error::Error;
 use std::convert::From;
 use std::fmt;
 use std::io;
+use std::path::PathBuf;
 
 use crate::config;
 use crate::project_generator;
@@ -12,6 +13,7 @@ pub enum CompilerError {
   ExecutableNotFound(io::Error, String),
   VibraniumDirectoryNotFound(project_generator::error::ProjectGenerationError),
   InvalidConfig(config::error::ConfigError),
+  ImportError(PathBuf),
   UnsupportedStrategy,
   Other(String),
 }
@@ -24,6 +26,7 @@ impl Error for CompilerError {
       CompilerError::VibraniumDirectoryNotFound(error) => Some(error),
       CompilerError::InvalidConfig(error) => Some(error),
       CompilerError::UnsupportedStrategy => None,
+      CompilerError::ImportError(_path) => None,
       CompilerError::Other(_message) => None,
     }
   }
@@ -37,6 +40,7 @@ impl fmt::Display for CompilerError {
       CompilerError::VibraniumDirectoryNotFound(error) => write!(f, "{}", error.description()),
       CompilerError::InvalidConfig(error) => write!(f, "{}", error.description()),
       CompilerError::UnsupportedStrategy => write!(f, "Couldn't compile project without `CompilerConfig::compiler_options`. No built-in support for requested compiler."),
+      CompilerError::ImportError(path) => write!(f, "Couldn't compile project. Import file doesn't exist: {:?}", path),
       CompilerError::Other(message) => write!(f, "{}", &message),
     }
   }
@@ -48,5 +52,11 @@ impl From<config::error::ConfigError> for CompilerError {
       config::error::ConfigError::Deserialization(_) => CompilerError::InvalidConfig(error),
       _ => CompilerError::Other(error.to_string()),
     }
+  }
+}
+
+impl From<std::io::Error> for CompilerError {
+  fn from(error: std::io::Error) -> Self {
+    CompilerError::Io(error)
   }
 }
