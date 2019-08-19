@@ -6,6 +6,7 @@ extern crate glob;
 extern crate web3;
 extern crate ethabi;
 extern crate petgraph;
+extern crate regex;
 extern crate sha3;
 extern crate toml;
 extern crate toml_query;
@@ -22,6 +23,8 @@ use std::path::PathBuf;
 use std::collections::HashMap;
 use blockchain::connector as connector;
 use web3::types::Address;
+use project_generator::error::ProjectGenerationError;
+use utils::adjust_canonicalization;
 
 #[derive(Debug)]
 pub struct Vibranium {
@@ -30,11 +33,13 @@ pub struct Vibranium {
 }
 
 impl Vibranium {
-  pub fn new(project_path: PathBuf) -> Vibranium {
-    Vibranium {
+  pub fn new(project_path: PathBuf) -> Result<Vibranium, ProjectGenerationError> {
+    let mut project_path = project_path.canonicalize().map_err(|_err| ProjectGenerationError::ProjectPathNotFound)?;
+    project_path = adjust_canonicalization(&project_path);
+    Ok(Vibranium {
       config: config::Config::new(project_path.clone()),
       project_path,
-    }
+    })
   }
 
   pub fn start_node(&self, config: blockchain::NodeConfig) -> Result<ExitStatus, blockchain::error::NodeError> {
@@ -85,11 +90,9 @@ impl Vibranium {
     generator
       .check_vibranium_dir_exists()
       .map_err(compiler::error::CompilerError::VibraniumDirectoryNotFound)
-      .and_then(|_| {
-        compiler.compile(config).map(|process| {
-          process.wait_with_output().map_err(compiler::error::CompilerError::Io)
-        })
-      })
+      .and_then(|_| compiler.compile(config).map(|process| {
+        process.wait_with_output().map_err(compiler::error::CompilerError::Io)
+      }))
       .and_then(|output| output)
       .and_then(|output| {
         if !output.status.success() {

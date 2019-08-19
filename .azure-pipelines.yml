@@ -84,8 +84,8 @@ jobs:
           echo "##vso[task.setvariable variable=PATH;]%PATH%;%USERPROFILE%\.cargo\bin"
         displayName: Windows install rust
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
-      - script: cargo build --all
-        displayName: Cargo build
+      #- script: cargo build --all
+        #displayName: Cargo build
       - script: cargo test --all
         displayName: Cargo test vibranium
       #- script: nohup parity --config dev &
@@ -105,5 +105,5 @@ jobs:
       - bash: |
           #export PATH="$(cd ../Downloads && pwd):${PATH}"
           #export PATH="$(cd ../Downloads/solidity-windows && pwd):${PATH}"
-          cd cli && cargo test --all
+          cd cli && cargo test --all -- --nocapture
         displayName: Cargo test vibranium-cli
