@@ -36,6 +36,8 @@ pub struct Deployer<'a> {
   tracker: &'a DeploymentTracker<'a>,
 }
 
+pub type DeployedContracts = HashMap<Address, (String, Address, String, bool)>;
+
 impl<'a> Deployer<'a> {
   pub fn new(config: &'a Config, connector: &'a BlockchainConnector, tracker: &'a DeploymentTracker) -> Deployer<'a> {
     Deployer {
@@ -45,7 +47,7 @@ impl<'a> Deployer<'a> {
     }
   }
 
-  pub fn deploy(&self, options: DeployOptions) -> Result<HashMap<Address, (String, Address, String, bool)>, DeploymentError>  {
+  pub fn deploy(&self, options: DeployOptions) -> Result<DeployedContracts, DeploymentError>  {
 
     let project_config = self.config.read()?;
 
@@ -63,7 +65,7 @@ impl<'a> Deployer<'a> {
     let mut deployed_contracts = HashMap::new();
 
     let tracking_enabled = options.tracking_enabled
-      .unwrap_or(deployment_config.tracking_enabled.unwrap_or(true));
+      .unwrap_or_else(|| deployment_config.tracking_enabled.unwrap_or(true));
 
     if tracking_enabled && !self.tracker.database_exists() {
       self.tracker.create_database()?;
@@ -85,7 +87,7 @@ impl<'a> Deployer<'a> {
         let bytecode = fs::read_to_string(&bin_path).unwrap();
         let abi = fs::read(abi_path).unwrap();
 
-        let args = smart_contract_config.args.as_ref().unwrap_or(&vec![]).iter().map(|arg| arg.value.clone()).collect();
+        let args = smart_contract_config.args.as_ref().unwrap_or(&vec![]).iter().map(|arg| arg.value.clone()).collect::<Vec<String>>();
 
         let tokenized_args = match &smart_contract_config.args {
           Some(args) => tokenize_args(args, &deployed_contracts)?,
@@ -137,15 +139,15 @@ impl<'a> Deployer<'a> {
   }
 
   fn get_artifacts(&self, artifacts_path: &str, config: &SmartContractConfig) -> Result<Option<(PathBuf, PathBuf)>, DeploymentError> {
-    if config.bytecode_path.is_some() && !config.abi_path.is_some() {
-      return Err(DeploymentError::MissingABIPath(config.name.to_string()));
-    } else if !config.bytecode_path.is_some() && config.abi_path.is_some() {
-      return Err(DeploymentError::MissingBytecodePath(config.name.to_string()));
+    if config.bytecode_path.is_some() && config.abi_path.is_none() {
+      Err(DeploymentError::MissingABIPath(config.name.to_string()))
+    } else if config.bytecode_path.is_none() && config.abi_path.is_some() {
+      Err(DeploymentError::MissingBytecodePath(config.name.to_string()))
     } else if config.bytecode_path.is_some() && config.abi_path.is_some() {
       let bytecode_path = self.config.project_path.join(&PathBuf::from(config.bytecode_path.as_ref().unwrap()));
       let abi_path = self.config.project_path.join(&PathBuf::from(config.abi_path.as_ref().unwrap()));
       info!("Using pre-defined artifacts: {:?} and {:?}", &abi_path, &bytecode_path);
-      return Ok(Some((bytecode_path, abi_path)))
+      Ok(Some((bytecode_path, abi_path)))
     } else {
       let artifacts_path = self.config.project_path.join(artifacts_path);
       let artifacts_dir = std::fs::read_dir(&artifacts_path)?;
@@ -202,11 +204,11 @@ fn tokenize_args(args: &[SmartContractArg], deployed_contracts: &HashMap<Address
   Ok(tokenized_args)
 }
 
-fn sort_by_dependencies(smart_contracts: &Vec<SmartContractConfig>) -> Result<Vec<&SmartContractConfig>, DeploymentError> {
+fn sort_by_dependencies(smart_contracts: &[SmartContractConfig]) -> Result<Vec<&SmartContractConfig>, DeploymentError> {
   let graph = DiGraphMap::<&str, ()>::from_edges(
     smart_contracts.iter().filter(|contract| contract.args.is_some()).flat_map(|contract| {
       contract.args.as_ref().unwrap().iter()
-        .filter(|dep| dep.value.starts_with("$") && dep.kind == "address")
+        .filter(|dep| dep.value.starts_with('$') && dep.kind == "address")
         .map(move |dep| (contract.name.as_str(), &dep.value[1..]))
     })
   ).into_graph::<u32>();

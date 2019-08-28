@@ -71,7 +71,7 @@ impl ToString for SupportedBlockchainClients {
   }
 }
 
-pub fn init_node(client: &str, options: &Vec<String>, vibranium_dir_path: &PathBuf) -> Result<(), std::io::Error> {
+pub fn init_node(client: &str, options: &[String], vibranium_dir_path: &PathBuf) -> Result<(), std::io::Error> {
   match client.parse() {
     Ok(SupportedBlockchainClients::Parity) => {
 
