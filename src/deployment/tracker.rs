@@ -47,7 +47,7 @@ impl<'a> DeploymentTracker<'a> {
     Ok(())
   }
 
-  pub fn track(&self, block_hash: H256, name: String, byte_code: String, args: &Vec<String>, address: Address) -> Result<(), DeploymentTrackingError> {
+  pub fn track(&self, block_hash: H256, name: String, byte_code: String, args: &[String], address: Address) -> Result<(), DeploymentTrackingError> {
 
     let block_hash = create_block_hash(&block_hash);
     let smart_contract_hash = create_smart_contract_hash(&name, &byte_code, &args);
@@ -67,7 +67,7 @@ impl<'a> DeploymentTracker<'a> {
     self.write(tracking_data)
   }
 
-  pub fn get_smart_contract_tracking_data(&self, block_hash: &H256, name: &str, byte_code: &str, args: &Vec<String>) -> Result<Option<SmartContractTrackingDataEntry>, DeploymentTrackingError> {
+  pub fn get_smart_contract_tracking_data(&self, block_hash: &H256, name: &str, byte_code: &str, args: &[String]) -> Result<Option<SmartContractTrackingDataEntry>, DeploymentTrackingError> {
     let block_hash = create_block_hash(&block_hash);
     let smart_contract_hash = create_smart_contract_hash(&name, &byte_code, &args);
     let tracking_data = self.try_from_tracking_file()?;
@@ -85,7 +85,7 @@ impl<'a> DeploymentTracker<'a> {
     match self.try_from_tracking_file() {
       Err(_) => Ok(None),
       Ok(tracking_data) => {
-        let contract_data = tracking_data.read(&format!("{}", &block_hash))?;
+        let contract_data = tracking_data.read(&&block_hash.to_string())?;
         if let Some(contract_data) = contract_data {
           Ok(Some(contract_data.to_owned().try_into::<SmartContractTrackingData>()?))
         } else {
@@ -120,7 +120,7 @@ fn create_block_hash(block_hash: &H256) -> String {
   format!("0x{:x}", Sha3_256::digest(block_hash.as_bytes()))
 }
 
-fn create_smart_contract_hash(name: &str, byte_code: &str, args: &Vec<String>) -> String {
+fn create_smart_contract_hash(name: &str, byte_code: &str, args: &[String]) -> String {
   let mut hasher = Sha3_256::new();
 
   hasher.input(name.as_bytes());

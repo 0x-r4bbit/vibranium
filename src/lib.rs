@@ -20,9 +20,7 @@ mod utils;
 
 use std::process::{ExitStatus, Output};
 use std::path::PathBuf;
-use std::collections::HashMap;
 use blockchain::connector as connector;
-use web3::types::Address;
 use project_generator::error::ProjectGenerationError;
 use utils::adjust_canonicalization;
 
@@ -119,7 +117,7 @@ impl Vibranium {
       })
   }
 
-  pub fn deploy(&self, options: deployment::DeployOptions) -> Result<HashMap<Address, (String, Address, String, bool)>, deployment::error::DeploymentError> {
+  pub fn deploy(&self, options: deployment::DeployOptions) -> Result<deployment::DeployedContracts, deployment::error::DeploymentError> {
     let (_eloop, connector) = self.get_blockchain_connector().map_err(deployment::error::DeploymentError::Connection)?;
     let tracker = deployment::tracker::DeploymentTracker::new(&self.config);
     let deployer = deployment::Deployer::new(&self.config, &connector, &tracker);
