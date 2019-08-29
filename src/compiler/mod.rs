@@ -18,6 +18,7 @@ use utils::{INTERNAL_SOURCE_DIR};
 pub struct CompilerConfig {
   pub compiler: Option<String>,
   pub compiler_options: Option<Vec<String>>,
+  pub smart_imports_enabled: bool,
 }
 
 pub struct Compiler<'a> {
@@ -90,6 +91,26 @@ impl<'a> Compiler<'a> {
     Ok(normalized_imports.iter().cloned().collect::<Vec<PathBuf>>())
   }
 
+  fn find_input_files(&self, patterns: &Vec<String>) -> Vec<String> {
+    let mut files = vec![];
+    for pattern in patterns {
+      let pattern = PathBuf::from(&pattern);
+      let full_pattern = if pattern.starts_with(&self.config.project_path) {
+        pattern
+      } else {
+        self.config.project_path.join(&pattern)
+      };
+      files.extend(
+        glob(&full_pattern.to_str().unwrap())
+        .unwrap()
+        .filter_map(Result::ok)
+        .map(|path| path.to_string_lossy().to_string())
+        .collect::<Vec<String>>()
+      );
+    }
+    files
+  }
+
   pub fn compile(&self, config: CompilerConfig) -> Result<Child, error::CompilerError> {
     let project_config = self.config.read()?;
     // `project_config.sources.artifacts` could use `/` or `\`, decomposing and collecting it normalizes
@@ -134,37 +155,25 @@ impl<'a> Compiler<'a> {
 
     compiler_options.push(artifacts_dir.to_string_lossy().to_string());
 
-    let input_files = match compiler.parse() {
-      Ok(SupportedCompilers::Solc) => {
-        self.normalize_imports()?
-          .iter()
-          .map(|path| path.to_string_lossy().to_string())
-          .collect::<Vec<String>>()
-      },
-      Ok(SupportedCompilers::SolcJs) => {
-        self.normalize_imports()?
-          .iter()
-          .map(|path| path.to_string_lossy().to_string())
-          .collect::<Vec<String>>()
-      },
-      Err(_err) => {
-        let mut files = vec![];
-        for pattern in &project_config.sources.smart_contracts {
-          let pattern = PathBuf::from(&pattern);
-          let full_pattern = if pattern.starts_with(&self.config.project_path) {
-            pattern
-          } else {
-            self.config.project_path.join(&pattern)
-          };
-          files.extend(
-            glob(&full_pattern.to_str().unwrap())
-            .unwrap()
-            .filter_map(Result::ok)
+    let input_files = if !config.smart_imports_enabled {
+      self.find_input_files(&project_config.sources.smart_contracts)
+    } else {
+      match compiler.parse() {
+        Ok(SupportedCompilers::Solc) => {
+          self.normalize_imports()?
+            .iter()
             .map(|path| path.to_string_lossy().to_string())
             .collect::<Vec<String>>()
-          );
+        },
+        Ok(SupportedCompilers::SolcJs) => {
+          self.normalize_imports()?
+            .iter()
+            .map(|path| path.to_string_lossy().to_string())
+            .collect::<Vec<String>>()
+        },
+        Err(_err) => {
+          self.find_input_files(&project_config.sources.smart_contracts)
         }
-        files
       }
     };
 

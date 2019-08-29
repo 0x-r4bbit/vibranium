@@ -544,15 +544,8 @@ mod compile_cmd {
 
   #[test]
   fn it_should_transform_source_imports_when_using_solidity() -> Result<(), Box<std::error::Error>> {
-    let mut config = ProjectConfig::default();
-    let pattern = if cfg!(target_os = "windows") {
-      r#"contracts\*.sol"#
-    } else {
-      "contracts/*.sol"
-    };
-    config.sources.smart_contracts = vec![pattern.to_string()];
 
-    let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
+    let (tmp_dir, project_path) = setup_vibranium_project(None)?;
     let node_modules_path = project_path.join("node_modules");
 
     let import_path = PathBuf::from("@some-package").join("contracts").join("something.sol");
@@ -576,6 +569,28 @@ mod compile_cmd {
     cmd.assert().success();
 
     assert_eq!(project_path.join(".vibranium").join("contracts").join(&absolute_path).exists(), true);
+
+    tmp_dir.close()?;
+    Ok(())
+  }
+
+  #[test]
+  fn it_should_turn_off_smart_imports_when_flag_is_applied() -> Result<(), Box<std::error::Error>> {
+    let (tmp_dir, project_path) = setup_vibranium_project(None)?;
+    create_test_contract(&project_path, "simple_test_contract.sol")?;
+
+    let mut cmd = Command::main_binary()?;
+    cmd.arg("compile")
+        .arg("--compiler")
+        .arg("solcjs")
+        .arg("--path")
+        .arg(&project_path)
+        .arg("--no-smart-imports")
+        .arg("--verbose");
+
+    cmd.assert().success();
+
+    assert_eq!(project_path.join(".vibranium").join("contracts").exists(), false);
 
     tmp_dir.close()?;
     Ok(())
@@ -978,12 +993,6 @@ mod deploy_cmd {
     let contract_name = "SimpleTestContract";
     let contract_name_2 = "SimpleTestContract2";
 
-    let pattern = if cfg!(target_os = "windows") {
-      r#"contracts\*.sol"#
-    } else {
-      "contracts/*.sol"
-    };
-    config.sources.smart_contracts = vec![pattern.to_string()];
     config.deployment = Some(ProjectDeploymentConfig {
       gas_limit: None,
       gas_price: None,
@@ -1193,13 +1202,6 @@ mod deploy_cmd {
     let mut config = ProjectConfig::default();
     let contract_name = "SimpleTestContract";
 
-    let pattern = if cfg!(target_os = "windows") {
-      r#"contracts\*.sol"#
-    } else {
-      "contracts/*.sol"
-    };
-
-    config.sources.smart_contracts = vec![pattern.to_string()];
     config.deployment = Some(ProjectDeploymentConfig {
       gas_limit: None,
       gas_price: None,

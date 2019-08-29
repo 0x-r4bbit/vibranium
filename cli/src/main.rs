@@ -138,6 +138,10 @@ fn run() -> Result<(), Error> {
                       .help("Specifies compiler specific options that will be passed down to the compiler")
                       .multiple(true)
                       .raw(true))
+                    .arg(Arg::with_name("no-smart-imports")
+                      .short("nsi")
+                      .long("no-smart-imports")
+                      .help("Turns of smart import support in Solidity source files"))
                     .arg(Arg::with_name("verbose")
                       .short("v")
                       .long("verbose")
@@ -268,7 +272,7 @@ fn run() -> Result<(), Error> {
       println!("Compiling Vibranium project...");
       let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
       let vibranium = Vibranium::new(path)?;
-
+      
       let compiler_options = cmd.values_of("compiler-opts").map(|options| {
         options.map(std::string::ToString::to_string).collect()
       });
@@ -276,6 +280,7 @@ fn run() -> Result<(), Error> {
       let config = CompilerConfig {
         compiler: cmd.value_of("compiler").map(std::string::ToString::to_string),
         compiler_options,
+        smart_imports_enabled: !cmd.is_present("no-smart-imports"),
       };
 
       vibranium
