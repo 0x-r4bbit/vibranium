@@ -35,10 +35,10 @@ impl Error for CompilerError {
 impl fmt::Display for CompilerError {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      CompilerError::Io(error) => write!(f, "{}", error.description()),
+      CompilerError::Io(error) => write!(f, "{}", error),
       CompilerError::ExecutableNotFound(_error, exec) => write!(f, "Couldn't find executable for compiler {}", exec),
-      CompilerError::VibraniumDirectoryNotFound(error) => write!(f, "{}", error.description()),
-      CompilerError::InvalidConfig(error) => write!(f, "{}", error.description()),
+      CompilerError::VibraniumDirectoryNotFound(error) => write!(f, "{}", error),
+      CompilerError::InvalidConfig(error) => write!(f, "{}", error),
       CompilerError::UnsupportedStrategy => write!(f, "Couldn't compile project without `CompilerConfig::compiler_options`. No built-in support for requested compiler."),
       CompilerError::ImportError(path) => write!(f, "Couldn't compile project. Import file doesn't exist: {:?}", path),
       CompilerError::Other(message) => write!(f, "{}", &message),
