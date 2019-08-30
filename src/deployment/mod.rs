@@ -1,7 +1,7 @@
 pub mod error;
 pub mod tracker;
 
-use blockchain::connector::{BlockchainConnector};
+use blockchain::connector::BlockchainConnector;
 use config::{Config, SmartContractConfig, SmartContractArg};
 use crate::blockchain;
 use crate::config;

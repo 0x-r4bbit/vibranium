@@ -299,9 +299,7 @@ fn run() -> Result<(), Error> {
     ("accounts", Some(cmd)) => {
       let path = pathbuf_from_or_current_dir(cmd.value_of("path"))?;
       let vibranium = Vibranium::new(path)?;
-
-      let (_eloop, connector) = vibranium.get_blockchain_connector().map_err(error::CliError::BlockchainConnectorError)?;
-      let accounts = connector.accounts().map_err(error::CliError::BlockchainConnectorError)?;
+      let accounts = vibranium.node_accounts()?;
 
       for (i, address) in accounts.iter().enumerate() {
         println!("({}) {:?}", i, address);

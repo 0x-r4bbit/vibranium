@@ -11,6 +11,7 @@ extern crate sha3;
 extern crate toml;
 extern crate toml_query;
 
+pub mod accounts_manager;
 pub mod blockchain;
 pub mod project_generator;
 pub mod compiler;
@@ -23,6 +24,7 @@ use std::path::PathBuf;
 use blockchain::connector as connector;
 use project_generator::error::ProjectGenerationError;
 use utils::adjust_canonicalization;
+use web3::types::Address;
 
 #[derive(Debug)]
 pub struct Vibranium {
@@ -115,6 +117,12 @@ impl Vibranium {
         let blockchain_connector = connector::BlockchainConnector::new(adapter);
         Ok((eloop, blockchain_connector))
       })
+  }
+
+  pub fn node_accounts(&self) -> Result<Vec<Address>, accounts_manager::error::AccountsError> {
+    let (_eloop, connector) = self.get_blockchain_connector()?;
+    let accounts_manager = accounts_manager::AccountsManager::new(&connector);
+    accounts_manager.get_node_accounts()
   }
 
   pub fn deploy(&self, options: deployment::DeployOptions) -> Result<deployment::DeployedContracts, deployment::error::DeploymentError> {
