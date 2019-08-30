@@ -34,7 +34,7 @@ impl Default for ProjectConfig {
       sources: ProjectSourcesConfig::default(),
       compiler: Some(ProjectCmdExecutionConfig::default()),
       blockchain: Some(ProjectBlockchainConfig::default()),
-      deployment: None
+      deployment: None,
     }
   }
 }
@@ -93,6 +93,7 @@ pub struct ProjectDeploymentConfig {
   pub gas_limit: Option<usize>,
   pub tracking_enabled: Option<bool>,
   pub smart_contracts: Vec<SmartContractConfig>,
+  pub accounts: Option<Vec<AccountConfig>>
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -111,6 +112,11 @@ pub struct SmartContractConfig {
 pub struct SmartContractArg {
   pub value: String,
   pub kind: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct AccountConfig {
+  pub private_key: Option<String>,
 }
 
 #[derive(Default, Debug)]

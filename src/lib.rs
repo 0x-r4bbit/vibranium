@@ -10,6 +10,7 @@ extern crate regex;
 extern crate sha3;
 extern crate toml;
 extern crate toml_query;
+extern crate wagyu_ethereum;
 
 pub mod accounts_manager;
 pub mod blockchain;
@@ -125,10 +126,17 @@ impl Vibranium {
     accounts_manager.get_node_accounts()
   }
 
+  pub fn node_accounts(&self) -> Result<Vec<Address>, accounts_manager::error::AccountsError> {
+    let (_eloop, connector) = self.get_blockchain_connector()?;
+    let accounts_manager = accounts_manager::AccountsManager::new(&self.config, &connector);
+    accounts_manager.get_node_accounts()
+  }
+
   pub fn deploy(&self, options: deployment::DeployOptions) -> Result<deployment::DeployedContracts, deployment::error::DeploymentError> {
     let (_eloop, connector) = self.get_blockchain_connector().map_err(deployment::error::DeploymentError::Connection)?;
+    let accounts_manager = accounts_manager::AccountsManager::new(&self.config, &connector);
     let tracker = deployment::tracker::DeploymentTracker::new(&self.config);
-    let deployer = deployment::Deployer::new(&self.config, &connector, &tracker);
+    let deployer = deployment::Deployer::new(&self.config, &connector, &tracker, &accounts_manager);
     deployer.deploy(options)
   }
 

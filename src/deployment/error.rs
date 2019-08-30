@@ -8,6 +8,7 @@ use ethabi;
 
 use crate::blockchain;
 use crate::config;
+use crate::accounts_manager;
 
 #[derive(Debug)]
 pub enum DeploymentError {
@@ -101,6 +102,12 @@ impl From<DeploymentTrackingError> for DeploymentError {
 
 impl From<ethabi::Error> for DeploymentError {
   fn from(error: ethabi::Error) -> Self {
+    DeploymentError::Other(error.to_string())
+  }
+}
+
+impl From<accounts_manager::error::AccountsError> for DeploymentError {
+  fn from(error: accounts_manager::error::AccountsError) -> Self {
     DeploymentError::Other(error.to_string())
   }
 }
