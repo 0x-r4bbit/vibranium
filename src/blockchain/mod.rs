@@ -1,90 +1,107 @@
-use std::process::{Command, Child};
 use std::path::PathBuf;
+use std::process::{Child, Command};
 
 use crate::config;
 use crate::utils;
 
 use support::SupportedBlockchainClients;
 
+pub mod connector;
 pub mod error;
 pub mod support;
-pub mod connector;
 
 pub struct NodeConfig {
-  pub client: Option<String>,
-  pub client_options: Option<Vec<String>>,
+    pub client: Option<String>,
+    pub client_options: Option<Vec<String>>,
 }
 
 pub struct Node<'a> {
-  config: &'a config::Config
+    config: &'a config::Config,
 }
 
 impl<'a> Node<'a> {
-  pub fn new(config: &config::Config) -> Node {
-    Node {
-      config,
-    }
-  }
-
-  pub fn start(&self, config: NodeConfig) -> Result<Child, error::NodeError> {
-    let project_config = self.config.read()?;
-
-    let client = config.client.unwrap_or_else(|| {
-      match &project_config.blockchain {
-        Some(config) => config.cmd.clone().unwrap_or_else(|| SupportedBlockchainClients::Parity.executable()),
-        None => SupportedBlockchainClients::Parity.executable(),
-      }
-    });
-
-    let client_options: Vec<String> = match &config.client_options {
-      Some(options) => {
-        match client.parse() {
-          Ok(SupportedBlockchainClients::Parity) => utils::merge_cli_options(
-            support::default_options_from(SupportedBlockchainClients::Parity, &self.config.vibranium_dir_path),
-            options.to_vec()
-          ),
-          Ok(SupportedBlockchainClients::Geth) => utils::merge_cli_options(
-            support::default_options_from(SupportedBlockchainClients::Geth, &self.config.vibranium_dir_path),
-            options.to_vec()
-          ),
-          Ok(SupportedBlockchainClients::Ganache) => utils::merge_cli_options(
-            support::default_options_from(SupportedBlockchainClients::Ganache, &self.config.vibranium_dir_path),
-            options.to_vec()
-          ),
-          Err(_err) => options.to_vec(),
-        }
-      }
-      None => {
-        match project_config.blockchain {
-          Some(config) => config.options.unwrap_or_else(|| try_default_options_from(&client, &self.config.vibranium_dir_path)),
-          None => try_default_options_from(&client, &self.config.vibranium_dir_path)
-        }
-      }
-    };
-
-    if client_options.is_empty() {
-      if let Err(err) = client.parse::<SupportedBlockchainClients>() {
-        Err(err)?
-      }
+    pub fn new(config: &config::Config) -> Node {
+        Node { config }
     }
 
-    support::init_node(&client, &client_options, &self.config.vibranium_dir_path)?;
+    pub fn start(&self, config: NodeConfig) -> Result<Child, error::NodeError> {
+        let project_config = self.config.read()?;
 
-    info!("Starting node with command: {} {}", &client, client_options.join(" "));
+        let client = config
+            .client
+            .unwrap_or_else(|| match &project_config.blockchain {
+                Some(config) => config
+                    .cmd
+                    .clone()
+                    .unwrap_or_else(|| SupportedBlockchainClients::Parity.executable()),
+                None => SupportedBlockchainClients::Parity.executable(),
+            });
 
-    Command::new(client)
+        let client_options: Vec<String> = match &config.client_options {
+            Some(options) => match client.parse() {
+                Ok(SupportedBlockchainClients::Parity) => utils::merge_cli_options(
+                    support::default_options_from(
+                        SupportedBlockchainClients::Parity,
+                        &self.config.vibranium_dir_path,
+                    ),
+                    options.to_vec(),
+                ),
+                Ok(SupportedBlockchainClients::Geth) => utils::merge_cli_options(
+                    support::default_options_from(
+                        SupportedBlockchainClients::Geth,
+                        &self.config.vibranium_dir_path,
+                    ),
+                    options.to_vec(),
+                ),
+                Ok(SupportedBlockchainClients::Ganache) => utils::merge_cli_options(
+                    support::default_options_from(
+                        SupportedBlockchainClients::Ganache,
+                        &self.config.vibranium_dir_path,
+                    ),
+                    options.to_vec(),
+                ),
+                Err(_err) => options.to_vec(),
+            },
+            None => match project_config.blockchain {
+                Some(config) => config.options.unwrap_or_else(|| {
+                    try_default_options_from(&client, &self.config.vibranium_dir_path)
+                }),
+                None => try_default_options_from(&client, &self.config.vibranium_dir_path),
+            },
+        };
+
+        if client_options.is_empty() {
+            if let Err(err) = client.parse::<SupportedBlockchainClients>() {
+                Err(err)?
+            }
+        }
+
+        support::init_node(&client, &client_options, &self.config.vibranium_dir_path)?;
+
+        info!(
+            "Starting node with command: {} {}",
+            &client,
+            client_options.join(" ")
+        );
+
+        Command::new(client)
             .args(client_options)
             .spawn()
             .map_err(error::NodeError::Io)
-  }
+    }
 }
 
-
 fn try_default_options_from(client: &str, vibranium_dir_path: &PathBuf) -> Vec<String> {
-  match client.parse() {
-    Ok(SupportedBlockchainClients::Parity) => support::default_options_from(SupportedBlockchainClients::Parity, vibranium_dir_path),
-    Ok(SupportedBlockchainClients::Geth) => support::default_options_from(SupportedBlockchainClients::Geth, vibranium_dir_path),
-    Ok(SupportedBlockchainClients::Ganache) => support::default_options_from(SupportedBlockchainClients::Ganache, vibranium_dir_path),
-    Err(_err) => vec![],
-  }
+    match client.parse() {
+        Ok(SupportedBlockchainClients::Parity) => {
+            support::default_options_from(SupportedBlockchainClients::Parity, vibranium_dir_path)
+        }
+        Ok(SupportedBlockchainClients::Geth) => {
+            support::default_options_from(SupportedBlockchainClients::Geth, vibranium_dir_path)
+        }
+        Ok(SupportedBlockchainClients::Ganache) => {
+            support::default_options_from(SupportedBlockchainClients::Ganache, vibranium_dir_path)
+        }
+        Err(_err) => vec![],
+    }
 }
