@@ -29,7 +29,7 @@ pub enum CliError {
 }
 
 impl Error for CliError {
-  fn cause(&self) -> Option<&Error> {
+  fn cause(&self) -> Option<&dyn Error> {
     match self {
       CliError::CompilationError(error) => Some(error),
       CliError::ConfigurationSetError(error) => Some(error),

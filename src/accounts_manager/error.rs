@@ -9,7 +9,7 @@ pub enum AccountsError {
 }
 
 impl Error for AccountsError {
-  fn cause(&self) -> Option<&Error> {
+  fn cause(&self) -> Option<&dyn Error> {
     match self {
       AccountsError::Other(_message) => None,
     }

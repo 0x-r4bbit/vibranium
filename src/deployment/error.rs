@@ -30,7 +30,7 @@ pub enum DeploymentError {
 }
 
 impl Error for DeploymentError {
-  fn cause(&self) -> Option<&Error> {
+  fn cause(&self) -> Option<&dyn Error> {
     match self {
       DeploymentError::MissingConfig => None,
       DeploymentError::InvalidParamType(error) => Some(error),
@@ -118,7 +118,7 @@ pub enum DeploymentTrackingError {
 }
 
 impl Error for DeploymentTrackingError {
-  fn cause(&self) -> Option<&Error> {
+  fn cause(&self) -> Option<&dyn Error> {
     match self {
       DeploymentTrackingError::Other(_) => None,
       DeploymentTrackingError::DatabaseNotFound => None,
