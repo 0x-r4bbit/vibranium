@@ -17,7 +17,7 @@ pub enum ProjectGenerationError {
 }
 
 impl Error for ProjectGenerationError {
-  fn cause(&self) -> Option<&Error> {
+  fn cause(&self) -> Option<&dyn Error> {
     match self {
       ProjectGenerationError::InvalidConfig(error) => Some(error),
       ProjectGenerationError::ProjectPathNotFound => None,

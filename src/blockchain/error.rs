@@ -13,7 +13,7 @@ pub enum NodeError {
 }
 
 impl Error for NodeError {
-  fn cause(&self) -> Option<&Error> {
+  fn cause(&self) -> Option<&dyn Error> {
     match self {
       NodeError::Io(err) => Some(err),
       NodeError::UnsupportedClient => None,
@@ -58,7 +58,7 @@ pub enum ConnectionError {
 }
 
 impl Error for ConnectionError {
-  fn cause(&self) -> Option<&Error> {
+  fn cause(&self) -> Option<&dyn Error> {
     match self {
       ConnectionError::UnsupportedProtocol => None,
       ConnectionError::MissingConnectorConfig => None,

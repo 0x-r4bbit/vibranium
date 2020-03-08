@@ -16,7 +16,7 @@ pub enum ConfigError {
 }
 
 impl Error for ConfigError {
-  fn cause(&self) -> Option<&Error> {
+  fn cause(&self) -> Option<&dyn Error> {
     match self {
       ConfigError::Serialization(error) => Some(error),
       ConfigError::Deserialization(error) => Some(error),

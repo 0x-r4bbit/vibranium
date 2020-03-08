@@ -12,7 +12,7 @@ use std::path::{PathBuf};
 use tempfile::{tempdir, TempDir} ;
 use vibranium::config::ProjectConfig;
 
-fn setup_vibranium_project(config: Option<ProjectConfig>) -> Result<(TempDir, PathBuf), Box<std::error::Error>> {
+fn setup_vibranium_project(config: Option<ProjectConfig>) -> Result<(TempDir, PathBuf), Box<dyn std::error::Error>> {
   let tmp_dir = tempdir()?;
   let project_path = tmp_dir.path().join("test_dapp");
   let _ = fs::create_dir(&project_path);
@@ -35,7 +35,7 @@ fn setup_vibranium_project(config: Option<ProjectConfig>) -> Result<(TempDir, Pa
   Ok((tmp_dir, project_path))
 }
 
-fn create_test_file(project_path: &PathBuf, dest: &str, name: &str) -> Result<(), Box<std::error::Error>> {
+fn create_test_file(project_path: &PathBuf, dest: &str, name: &str) -> Result<(), Box<dyn std::error::Error>> {
   let cwd = std::env::current_dir()?;
   let fixture_file = cwd.join("tests").join("fixtures").join(name);
   let test_file = project_path.join(dest).join(name);
@@ -43,27 +43,27 @@ fn create_test_file(project_path: &PathBuf, dest: &str, name: &str) -> Result<()
   Ok(())
 }
 
-fn create_test_contract(project_path: &PathBuf, name: &str) -> Result<(), Box<std::error::Error>> {
+fn create_test_contract(project_path: &PathBuf, name: &str) -> Result<(), Box<dyn std::error::Error>> {
   create_test_file(project_path, "contracts", name)
 }
 
-fn create_test_artifact(project_path: &PathBuf, name: &str) -> Result<(), Box<std::error::Error>> {
+fn create_test_artifact(project_path: &PathBuf, name: &str) -> Result<(), Box<dyn std::error::Error>> {
   create_test_file(project_path, "artifacts", name)
 }
 
-fn read_config(project_path: &PathBuf) -> Result<ProjectConfig, Box<std::error::Error>> {
+fn read_config(project_path: &PathBuf) -> Result<ProjectConfig, Box<dyn std::error::Error>> {
   let project_config = toml::from_str(&fs::read_to_string(&project_path.join("vibranium.toml"))?)?;
   Ok(project_config)
 }
 
-fn set_configurations(configs: Vec<(&str, &str)>, project_path: &PathBuf) -> Result<(), Box<std::error::Error>> {
+fn set_configurations(configs: Vec<(&str, &str)>, project_path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
   for (config, value) in configs {
     set_configuration(&config, &value, &project_path)?;
   }
   Ok(())
 }
 
-fn set_configuration(config: &str, value: &str, project_path: &PathBuf) -> Result<(), Box<std::error::Error>> {
+fn set_configuration(config: &str, value: &str, project_path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
   let mut cmd = Command::main_binary()?;
   cmd.arg("config")
       .arg(config)
@@ -85,7 +85,7 @@ mod init_cmd {
   use super::read_config;
 
   #[test]
-  fn it_should_fail_on_init_if_project_path_doesnt_exist() -> Result<(), Box<std::error::Error>> {
+  fn it_should_fail_on_init_if_project_path_doesnt_exist() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::main_binary()?;
     cmd.arg("init")
         .arg("--path")
@@ -97,7 +97,7 @@ mod init_cmd {
   }
 
   #[test]
-  fn it_should_initialize_project() -> Result<(), Box<std::error::Error>> {
+  fn it_should_initialize_project() -> Result<(), Box<dyn std::error::Error>> {
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
 
     assert_eq!(project_path.join(".vibranium").exists(), true);
@@ -110,7 +110,7 @@ mod init_cmd {
   }
 
   #[test]
-  fn it_should_initialize_project_with_default_config_preset() -> Result<(), Box<std::error::Error>> {
+  fn it_should_initialize_project_with_default_config_preset() -> Result<(), Box<dyn std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
 
@@ -159,7 +159,7 @@ mod reset_cmd {
   use super::read_config;
 
   #[test]
-  fn it_should_fail_on_reset_if_project_is_not_a_vibranium_project() -> Result<(), Box<std::error::Error>> {
+  fn it_should_fail_on_reset_if_project_is_not_a_vibranium_project() -> Result<(), Box<dyn std::error::Error>> {
     let tmp_dir = tempdir()?;
 
     let mut cmd = Command::main_binary()?;
@@ -175,7 +175,7 @@ mod reset_cmd {
   }
 
   #[test]
-  fn it_should_reset_project() -> Result<(), Box<std::error::Error>> {
+  fn it_should_reset_project() -> Result<(), Box<dyn std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
     let vibranium_dir = project_path.join(".vibranium");
@@ -202,7 +202,7 @@ mod reset_cmd {
   }
 
   #[test]
-  fn it_should_honor_changes_in_vibranium_toml_when_resetting_project() -> Result<(), Box<std::error::Error>> {
+  fn it_should_honor_changes_in_vibranium_toml_when_resetting_project() -> Result<(), Box<dyn std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
     let updated_artifacts_dir: &str = "test_artifacts";
@@ -222,7 +222,7 @@ mod reset_cmd {
   }
 
   #[test]
-  fn it_should_restore_config_file_with_defaults_when_resetting_project() -> Result<(), Box<std::error::Error>> {
+  fn it_should_restore_config_file_with_defaults_when_resetting_project() -> Result<(), Box<dyn std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
 
@@ -260,7 +260,7 @@ mod reset_cmd {
   }
 
   #[test]
-  fn it_should_reset_only_tracking_data_if_flag_is_provided() -> Result<(), Box<std::error::Error>> {
+  fn it_should_reset_only_tracking_data_if_flag_is_provided() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut config = ProjectConfig::default();
     let contract_name = "SimpleTestContract";
@@ -330,7 +330,7 @@ mod config_cmd {
   use super::read_config;
 
   #[test]
-  fn it_should_update_vibranium_config_file_via_config_command() -> Result<(), Box<std::error::Error>> {
+  fn it_should_update_vibranium_config_file_via_config_command() -> Result<(), Box<dyn std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
     set_configuration("sources.artifacts", "foo", &project_path)?;
@@ -343,7 +343,7 @@ mod config_cmd {
   }
 
   #[test]
-  fn it_accept_multi_value_config_options_using_array_syntax() -> Result<(), Box<std::error::Error>> {
+  fn it_accept_multi_value_config_options_using_array_syntax() -> Result<(), Box<dyn std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
 
@@ -357,7 +357,7 @@ mod config_cmd {
   }
 
   #[test]
-  fn it_should_remove_empty_values_when_setting_multi_value_options() -> Result<(), Box<std::error::Error>> {
+  fn it_should_remove_empty_values_when_setting_multi_value_options() -> Result<(), Box<dyn std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
     set_configuration("compiler.options", "[foo, ]", &project_path)?;
@@ -370,7 +370,7 @@ mod config_cmd {
   }
 
   #[test]
-  fn it_should_fail_when_setting_incompatible_config_value_for_config_option() -> Result<(), Box<std::error::Error>> {
+  fn it_should_fail_when_setting_incompatible_config_value_for_config_option() -> Result<(), Box<dyn std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
 
@@ -391,7 +391,7 @@ mod config_cmd {
   }
 
   #[test]
-  fn it_should_ignore_config_options_that_do_not_exist() -> Result<(), Box<std::error::Error>> {
+  fn it_should_ignore_config_options_that_do_not_exist() -> Result<(), Box<dyn std::error::Error>> {
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
     set_configuration("unknown", "foo", &project_path)?;
     tmp_dir.close()?;
@@ -399,7 +399,7 @@ mod config_cmd {
   }
 
   #[test]
-  fn it_should_remove_config_option() -> Result<(), Box<std::error::Error>> {
+  fn it_should_remove_config_option() -> Result<(), Box<dyn std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
 
@@ -428,7 +428,6 @@ mod compile_cmd {
   use std::path::PathBuf;
   use assert_cmd::prelude::*;
   use predicates::prelude::*;
-  use vibranium::config::ProjectConfig;
 
   use super::setup_vibranium_project;
   use super::create_test_contract;
@@ -436,7 +435,7 @@ mod compile_cmd {
   use super::set_configurations;
 
   #[test]
-  fn it_should_fail_when_given_compiler_option_is_not_supported_and_no_compiler_options_specificed() -> Result<(), Box<std::error::Error>> {
+  fn it_should_fail_when_given_compiler_option_is_not_supported_and_no_compiler_options_specificed() -> Result<(), Box<dyn std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
 
@@ -459,7 +458,7 @@ mod compile_cmd {
   }
 
   #[test]
-  fn it_should_fail_when_given_compiler_is_not_installed() -> Result<(), Box<std::error::Error>> {
+  fn it_should_fail_when_given_compiler_is_not_installed() -> Result<(), Box<dyn std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
 
@@ -483,7 +482,7 @@ mod compile_cmd {
   }
 
   #[test]
-  fn it_should_fail_when_compiler_program_fails() -> Result<(), Box<std::error::Error>> {
+  fn it_should_fail_when_compiler_program_fails() -> Result<(), Box<dyn std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
 
@@ -502,7 +501,7 @@ mod compile_cmd {
   }
 
   #[test]
-  fn it_should_honor_compiler_options_specified_in_config_file() -> Result<(), Box<std::error::Error>> {
+  fn it_should_honor_compiler_options_specified_in_config_file() -> Result<(), Box<dyn std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
 
@@ -522,7 +521,7 @@ mod compile_cmd {
   }
 
   #[test]
-  fn it_should_override_config_file_compiler_options_with_cli_options() -> Result<(), Box<std::error::Error>> {
+  fn it_should_override_config_file_compiler_options_with_cli_options() -> Result<(), Box<dyn std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
 
@@ -543,7 +542,7 @@ mod compile_cmd {
   }
 
   #[test]
-  fn it_should_transform_source_imports_when_using_solidity() -> Result<(), Box<std::error::Error>> {
+  fn it_should_transform_source_imports_when_using_solidity() -> Result<(), Box<dyn std::error::Error>> {
 
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
     let node_modules_path = project_path.join("node_modules");
@@ -575,7 +574,7 @@ mod compile_cmd {
   }
 
   #[test]
-  fn it_should_turn_off_smart_imports_when_flag_is_applied() -> Result<(), Box<std::error::Error>> {
+  fn it_should_turn_off_smart_imports_when_flag_is_applied() -> Result<(), Box<dyn std::error::Error>> {
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
     create_test_contract(&project_path, "simple_test_contract.sol")?;
 
@@ -607,7 +606,7 @@ mod accounts_cmd {
   use super::setup_vibranium_project;
 
   #[test]
-  fn it_should_output_local_blockchains_dev_accounts() -> Result<(), Box<std::error::Error>> {
+  fn it_should_output_local_blockchains_dev_accounts() -> Result<(), Box<dyn std::error::Error>> {
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
 
     let mut cmd = Command::main_binary()?;
@@ -643,7 +642,7 @@ mod deploy_cmd {
   };
 
   #[test]
-  fn it_should_fail_if_no_deployment_config_is_provided() -> Result<(), Box<std::error::Error>> {
+  fn it_should_fail_if_no_deployment_config_is_provided() -> Result<(), Box<dyn std::error::Error>> {
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
 
     let mut cmd = Command::main_binary()?;
@@ -660,7 +659,7 @@ mod deploy_cmd {
   }
 
   #[test]
-  fn it_should_skip_deployment_if_no_artifacts_exist() -> Result<(), Box<std::error::Error>> {
+  fn it_should_skip_deployment_if_no_artifacts_exist() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut config = ProjectConfig::default();
 
@@ -688,7 +687,7 @@ mod deploy_cmd {
   }
 
   #[test]
-  fn it_should_skip_deployment_if_address_is_provided_in_configuration() -> Result<(), Box<std::error::Error>> {
+  fn it_should_skip_deployment_if_address_is_provided_in_configuration() -> Result<(), Box<dyn std::error::Error>> {
     let mut config = ProjectConfig::default();
     let contract_name = "SimpleTestContract";
 
@@ -727,7 +726,7 @@ mod deploy_cmd {
   }
 
   #[test]
-  fn it_should_fail_if_provided_address_is_invalid() -> Result<(), Box<std::error::Error>> {
+  fn it_should_fail_if_provided_address_is_invalid() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut config = ProjectConfig::default();
     let contract_name = "SimpleTestContract";
@@ -767,7 +766,7 @@ mod deploy_cmd {
   }
 
   #[test]
-  fn it_should_fail_if_parameter_args_are_not_valid() -> Result<(), Box<std::error::Error>> {
+  fn it_should_fail_if_parameter_args_are_not_valid() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut config = ProjectConfig::default();
     let contract_name = "SimpleTestContract";
@@ -815,7 +814,7 @@ mod deploy_cmd {
   }
 
   #[test]
-  fn it_should_fail_if_it_can_not_tokenize_args() -> Result<(), Box<std::error::Error>> {
+  fn it_should_fail_if_it_can_not_tokenize_args() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut config = ProjectConfig::default();
     let contract_name = "SimpleTestContract";
@@ -863,7 +862,7 @@ mod deploy_cmd {
   }
 
   #[test]
-  fn it_should_fail_if_artifacts_are_partially_missing() -> Result<(), Box<std::error::Error>> {
+  fn it_should_fail_if_artifacts_are_partially_missing() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut config = ProjectConfig::default();
     let contract_name = "SimpleTestContract";
@@ -904,7 +903,7 @@ mod deploy_cmd {
   }
 
   #[test]
-  fn it_should_use_gas_limit_defined_in_smart_contract_config() -> Result<(), Box<std::error::Error>> {
+  fn it_should_use_gas_limit_defined_in_smart_contract_config() -> Result<(), Box<dyn std::error::Error>> {
     let mut config = ProjectConfig::default();
     let contract_name = "SimpleTestContract";
 
@@ -938,13 +937,13 @@ mod deploy_cmd {
     // The gas limit for SimpleTestContract is too low,
     // so we expect the deployment to fail.
     cmd.assert().failure();
-;
+
     tmp_dir.close()?;
     Ok(())
   }
 
   #[test]
-  fn it_should_deploy_smart_contracts() -> Result<(), Box<std::error::Error>> {
+  fn it_should_deploy_smart_contracts() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut config = ProjectConfig::default();
     let contract_name = "SimpleTestContract";
@@ -987,7 +986,7 @@ mod deploy_cmd {
   }
 
   #[test]
-  fn it_should_deploy_multiple_smart_contracts() -> Result<(), Box<std::error::Error>> {
+  fn it_should_deploy_multiple_smart_contracts() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut config = ProjectConfig::default();
     let contract_name = "SimpleTestContract";
@@ -1052,7 +1051,7 @@ mod deploy_cmd {
   }
 
   #[test]
-  fn it_should_track_deployed_smart_contracts() -> Result<(), Box<std::error::Error>> {
+  fn it_should_track_deployed_smart_contracts() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut config = ProjectConfig::default();
     let contract_name = "SimpleTestContract";
@@ -1107,7 +1106,7 @@ mod deploy_cmd {
   }
 
   #[test]
-  fn it_should_not_track_deployment_when_tracking_is_turned_off() -> Result<(), Box<std::error::Error>> {
+  fn it_should_not_track_deployment_when_tracking_is_turned_off() -> Result<(), Box<dyn std::error::Error>> {
     let mut config = ProjectConfig::default();
     let contract_name = "SimpleTestContract";
 
@@ -1152,7 +1151,7 @@ mod deploy_cmd {
   }
 
   #[test]
-  fn it_should_not_track_deployment_when_notracking_flag_is_set() -> Result<(), Box<std::error::Error>> {
+  fn it_should_not_track_deployment_when_notracking_flag_is_set() -> Result<(), Box<dyn std::error::Error>> {
     let mut config = ProjectConfig::default();
     let contract_name = "SimpleTestContract";
 
@@ -1198,7 +1197,7 @@ mod deploy_cmd {
   }
 
   #[test]
-  fn it_should_use_bytecode_of_specified_instance_of_configuration() -> Result<(), Box<std::error::Error>> {
+  fn it_should_use_bytecode_of_specified_instance_of_configuration() -> Result<(), Box<dyn std::error::Error>> {
     let mut config = ProjectConfig::default();
     let contract_name = "SimpleTestContract";
 
@@ -1269,7 +1268,7 @@ mod list_cmd {
   };
 
   #[test]
-  fn it_should_show_no_tracking_data_exists_if_no_tracking_database() -> Result<(), Box<std::error::Error>> {
+  fn it_should_show_no_tracking_data_exists_if_no_tracking_database() -> Result<(), Box<dyn std::error::Error>> {
     let (tmp_dir, project_path) = setup_vibranium_project(None)?;
 
     let mut cmd = Command::main_binary()?;
@@ -1286,7 +1285,7 @@ mod list_cmd {
   }
   
   #[test]
-  fn it_should_show_tracked_smart_contract_data() -> Result<(), Box<std::error::Error>> {
+  fn it_should_show_tracked_smart_contract_data() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut config = ProjectConfig::default();
     let contract_name = "SimpleTestContract";

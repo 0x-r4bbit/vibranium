@@ -22,7 +22,7 @@ use vibranium::project_generator::ResetOptions;
 
 mod error;
 
-type Error = Box<std::error::Error>;
+type Error = Box<dyn std::error::Error>;
 
 fn main() {
   if let Err(e) = run() {

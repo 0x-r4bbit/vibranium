@@ -19,7 +19,7 @@ pub enum CompilerError {
 }
 
 impl Error for CompilerError {
-  fn cause(&self) -> Option<&Error> {
+  fn cause(&self) -> Option<&dyn Error> {
     match self {
       CompilerError::Io(error) => Some(error),
       CompilerError::ExecutableNotFound(error, _exec) => Some(error),
