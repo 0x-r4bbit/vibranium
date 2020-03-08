@@ -14,17 +14,17 @@ jobs:
   - job: 'Test'
     strategy:
       matrix:
-        windows-stable:
-          imageName: 'vs2017-win2016'
-          rustup_toolchain: stable
-        windows-beta:
-          imageName: 'vs2017-win2016'
-          rustup_toolchain: beta
+        #windows-stable:
+          #imageName: 'windows-2019'
+          #rustup_toolchain: stable
+        #windows-beta:
+          #imageName: 'windows-2019'
+          #rustup_toolchain: beta
         mac-stable:
-          imageName: 'macos-10.13'
+          imageName: 'macos-10.15'
           rustup_toolchain: stable
         mac-beta:
-          imageName: 'macos-10.13'
+          imageName: 'macos-10.15'
           rustup_toolchain: beta
         linux-stable:
           imageName: 'ubuntu-16.04'
@@ -39,7 +39,7 @@ jobs:
         inputs:
           versionSpec: "10.5.0"
         displayName: Install Node
-      - script: npm install -g solc
+      - script: npm install -g solc@^0.5.0
         displayName: Install Solcjs
       #- script: |
           #mkdir -p ../Downloads
