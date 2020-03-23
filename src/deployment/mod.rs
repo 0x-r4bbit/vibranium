@@ -3,6 +3,7 @@ pub mod tracker;
 
 use blockchain::connector::BlockchainConnector;
 use config::{Config, SmartContractConfig, SmartContractArg};
+use crate::accounts_manager::AccountsManager;
 use crate::blockchain;
 use crate::config;
 use error::DeploymentError;
@@ -34,16 +35,23 @@ pub struct Deployer<'a> {
   config: &'a Config,
   connector: &'a BlockchainConnector,
   tracker: &'a DeploymentTracker<'a>,
+  accounts_manager: &'a AccountsManager<'a>
 }
 
 pub type DeployedContracts = HashMap<Address, (String, Address, String, bool)>;
 
 impl<'a> Deployer<'a> {
-  pub fn new(config: &'a Config, connector: &'a BlockchainConnector, tracker: &'a DeploymentTracker) -> Deployer<'a> {
+  pub fn new(
+    config: &'a Config,
+    connector: &'a BlockchainConnector,
+    tracker: &'a DeploymentTracker,
+    accounts_manager: &'a AccountsManager,
+  ) -> Deployer<'a> {
     Deployer {
       config,
       connector,
       tracker,
+      accounts_manager
     }
   }
 
@@ -56,7 +64,11 @@ impl<'a> Deployer<'a> {
     }
 
     let deployment_config = &project_config.deployment.unwrap();
-    let accounts = self.connector.accounts()?;
+
+    let accounts = match deployment_config.accounts {
+      None => self.accounts_manager.get_node_accounts()?,
+      Some(accounts_config) => self.accounts_manager.get_wallet_accounts(accounts_config)?
+    };
 
     let general_gas_price = deployment_config.gas_price.map(U256::from).unwrap_or_else(|| self.connector.gas_price().ok().unwrap_or_else(|| U256::from(DEFAULT_GAS_PRICE)));
     let general_gas_limit = deployment_config.gas_limit.map(U256::from).unwrap_or_else(|| U256::from(DEFAULT_GAS_LIMIT));

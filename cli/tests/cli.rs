@@ -284,6 +284,7 @@ mod reset_cmd {
           bytecode_path: None,
         },
       ],
+      accounts: None,
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
@@ -669,6 +670,7 @@ mod deploy_cmd {
       tx_confirmations: None,
       smart_contracts: vec![],
       tracking_enabled: None,
+      accounts: None,
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
@@ -708,6 +710,7 @@ mod deploy_cmd {
           bytecode_path: None,
         }
       ],
+      accounts: None,
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
@@ -748,6 +751,7 @@ mod deploy_cmd {
           bytecode_path: None,
         }
       ],
+      accounts: None,
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
@@ -793,6 +797,7 @@ mod deploy_cmd {
           bytecode_path: None,
         }
       ],
+      accounts: None,
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
@@ -841,6 +846,7 @@ mod deploy_cmd {
           bytecode_path: None,
         }
       ],
+      accounts: None,
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
@@ -882,6 +888,7 @@ mod deploy_cmd {
         abi_path: None,
         bytecode_path: None,
       }],
+      accounts: None,
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
@@ -922,6 +929,7 @@ mod deploy_cmd {
         abi_path: None,
         bytecode_path: None,
       }],
+      accounts: None,
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
@@ -967,6 +975,7 @@ mod deploy_cmd {
           bytecode_path: None,
         },
       ],
+      accounts: None,
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
@@ -1023,6 +1032,7 @@ mod deploy_cmd {
           bytecode_path: None,
         },
       ],
+      accounts: None,
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
@@ -1075,6 +1085,7 @@ mod deploy_cmd {
           bytecode_path: None,
         },
       ],
+      accounts: None,
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
@@ -1129,6 +1140,7 @@ mod deploy_cmd {
           bytecode_path: None,
         },
       ],
+      accounts: None,
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
@@ -1174,6 +1186,7 @@ mod deploy_cmd {
           bytecode_path: None,
         },
       ],
+      accounts: None,
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
@@ -1222,6 +1235,7 @@ mod deploy_cmd {
           bytecode_path: None,
         }
       ],
+      accounts: None,
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
@@ -1309,6 +1323,7 @@ mod list_cmd {
           bytecode_path: None,
         },
       ],
+      accounts: None,
     });
 
     let (tmp_dir, project_path) = setup_vibranium_project(Some(config))?;
